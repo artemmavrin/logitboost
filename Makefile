@@ -17,6 +17,7 @@ help:
 	@ echo "\tmake clean     \t remove auxiliary files."
 
 install: clean
+	$(PYTHON) -m pip install -r requirements.txt
 	$(PYTHON) $(SETUP) $(SETUPOPTS) install
 
 html: clean

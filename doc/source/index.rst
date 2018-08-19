@@ -3,7 +3,7 @@ LogitBoost
 ==========
 
 .. image:: https://img.shields.io/badge/python-3.7-blue.svg
-    :target: https://badge.fury.io/py/survive
+    :target: https://badge.fury.io/py/logitboost
     :alt: Python Version
 
 .. image:: https://badge.fury.io/py/logitboost.svg

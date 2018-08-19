@@ -1,13 +1,15 @@
 """Implementation of the LogitBoost algorithm."""
 
+from __future__ import division
+
 import numpy as np
 from sklearn.base import ClassifierMixin, MetaEstimatorMixin
 from sklearn.base import clone, is_regressor
 from sklearn.ensemble import BaseEnsemble
 from sklearn.tree import DecisionTreeRegressor
+from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import (check_X_y, check_is_fitted,
                                       check_random_state, has_fit_parameter)
-from sklearn.utils.multiclass import check_classification_targets
 
 # The smallest representable 64 bit floating point positive number eps such that
 # 1.0 + eps != 1.0

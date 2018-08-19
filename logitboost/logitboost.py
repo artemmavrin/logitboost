@@ -49,6 +49,10 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         numerical stability). Values will be clipped to the interval
         [-`z_max`, `z_max`]. See the bottom of p. 352 in [1]_.
 
+    learning_rate : float, optional
+        The learning rate shrinks the contribution of each classifier by
+        `learning_rate` during fitting.
+
     bootstrap : bool, optional
         If True, each boosting iteration trains the base estimator using a
         weighted bootstrap sample of the training data. If False, each bootstrap
@@ -73,12 +77,13 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
     """
 
     def __init__(self, base_estimator=None, n_estimators=50,
-                 weight_trim_quantile=0.05, z_max=4., bootstrap=False,
-                 random_state=None):
+                 weight_trim_quantile=0.05, z_max=4., learning_rate=1.,
+                 bootstrap=False, random_state=None):
         super(LogitBoost, self).__init__(base_estimator=base_estimator,
                                          n_estimators=n_estimators)
         self.weight_trim_quantile = weight_trim_quantile
         self.z_max = z_max
+        self.learning_rate = learning_rate
         self.bootstrap = bootstrap
         self.random_state = random_state
 
@@ -187,7 +192,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         # Update the scores and the probability estimates
         if iboost < self.n_estimators - 1:
             z_pred = estimator.predict(X)
-            scores += 0.5 * z_pred
+            scores += self.learning_rate * 0.5 * z_pred
             prob = _binary_prob_from_scores(scores)
 
         return scores, prob
@@ -219,7 +224,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             predictions -= predictions.mean(axis=1, keepdims=True)
             predictions *= (self.n_classes_ - 1.) / self.n_classes_
 
-            scores += predictions
+            scores += self.learning_rate * predictions
             prob = _multiclass_prob_from_scores(scores)
 
         self.estimators_.append(estimators_iboost)

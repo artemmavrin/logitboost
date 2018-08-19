@@ -57,7 +57,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         If :class:`int`, `random_state` is the seed used by the random number
         generator. If :class:`~numpy.random.RandomState` instance,
         `random_state` is the random number generator. If None, the random
-        number generator is the :class:`~numpy.random.RandomState instance used
+        number generator is the :class:`~numpy.random.RandomState` instance used
         by :mod:`numpy.random`.
 
     References

@@ -2,15 +2,18 @@
 
 import numpy as np
 from sklearn.base import ClassifierMixin, MetaEstimatorMixin
-from sklearn.base import is_regressor
+from sklearn.base import clone, is_regressor
 from sklearn.ensemble import BaseEnsemble
 from sklearn.tree import DecisionTreeRegressor
-from sklearn.utils.validation import check_X_y
-from sklearn.utils.validation import check_random_state
-from sklearn.utils.validation import has_fit_parameter
-from sklearn.utils.validation import check_is_fitted
+from sklearn.utils.validation import (check_X_y, check_is_fitted,
+                                      check_random_state, has_fit_parameter)
 
+# The smallest representable 64 bit floating point positive number eps such that
+# 1.0 + eps != 1.0
 _MACHINE_EPSILON = np.finfo(np.float64).eps
+
+# The default regressor for LogitBoost is a decision stump
+_BASE_ESTIMATOR_DEFAULT = DecisionTreeRegressor(max_depth=1)
 
 
 class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
@@ -29,21 +32,19 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
     n_estimators : int, optional
         The number of estimators in the ensemble.
 
-    Other Parameters
-    ----------------
-    learning_rate : float, optional
-        The learning rate shrinks the contribution of each regressor in the
-        ensemble by `learning_rate`.
-
-    weight_trim_threshold : float, optional
+    weight_trim_quantile : float, optional
         Threshold for weight trimming (see Section 9 in [1]_). The distribution
-        of the weights tends to become very skewed in later the boosting
-        iterations, and the observations with low weights contribute little to
-        the base estimator being fitted at that iteration. At each boosting
-        iteration, observations with weight smaller than this threshold are
-        removed from the data (for that iteration only) to speed up computation.
-        If this is None, the threshold is the square root of the machine
-        epsilon.
+        of the weights tends to become very skewed in later boosting iterations,
+        and the observations with low weights contribute little to the base
+        estimator being fitted at that iteration. At each boosting iteration,
+        observations with weight smaller than this quantile of the sample weight
+        distribution are removed from the data for fitting the base estimator
+        (for that iteration only) to speed up computation.
+
+    z_max : float, optional
+        Maximum response value to allow when fitting the base estimators (for
+        numerical stability). Values will be clipped to the interval
+        [-`z_max`, `z_max`]. See the bottom of p. 352 in [1]_.
 
     bootstrap : bool, optional
         If True, each boosting iteration trains the base estimator using a
@@ -53,14 +54,11 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         by means of a `sample_weight` parameter in its `fit()` method.
 
     random_state : int, RandomState instance or None, optional
-        If int, `random_state` is the seed used by the random number generator.
-        If :class:`~numpy.random.RandomState` instance, `random_state` is the
-        random number generator. If None, the random number generator is the
-        :class:`~numpy.random.RandomState instance used by :mod:`numpy.random`.
-
-    z_max : float, optional
-        Maximum response value to allow when fitting the base estimators. Values
-        will be clipped to the interval [-`z_max`, `z_max`].
+        If :class:`int`, `random_state` is the seed used by the random number
+        generator. If :class:`~numpy.random.RandomState` instance,
+        `random_state` is the random number generator. If None, the random
+        number generator is the :class:`~numpy.random.RandomState instance used
+        by :mod:`numpy.random`.
 
     References
     ----------
@@ -79,16 +77,30 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
     # All estimators trained by the model
     estimators_: list
 
-    def __init__(self, base_estimator=None, n_estimators=50, learning_rate=1.,
-                 weight_trim_threshold=None, bootstrap=False, random_state=None,
-                 z_max=4.):
+    def __init__(self, base_estimator=None, n_estimators=50,
+                 weight_trim_quantile=0.05, z_max=4., bootstrap=False,
+                 random_state=None):
         super(LogitBoost, self).__init__(base_estimator=base_estimator,
                                          n_estimators=n_estimators)
-        self.learning_rate = learning_rate
-        self.weight_trim_threshold = weight_trim_threshold
+        self.weight_trim_quantile = weight_trim_quantile
+        self.z_max = z_max
         self.bootstrap = bootstrap
         self.random_state = random_state
-        self.z_max = z_max
+
+    def _validate_estimator(self, default=None):
+        """Check the estimator and set the `base_estimator_` attribute."""
+        # The default regressor for LogitBoost is a decision stump
+        default = clone(_BASE_ESTIMATOR_DEFAULT)
+        super(LogitBoost, self)._validate_estimator(default=default)
+
+        if not is_regressor(self.base_estimator_):
+            raise ValueError(
+                "LogitBoost requires the base estimator to be a regressor.")
+
+        if (not self.bootstrap and
+                not has_fit_parameter(self.base_estimator_, "sample_weight")):
+            estimator_name = self.base_estimator_.__class__.__name__
+            raise ValueError(f"{estimator_name} doesn't support sample_weight.")
 
     def fit(self, X, y):
         """Build a LogitBoost classifier from the training data (X, y).
@@ -98,13 +110,13 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         X : array-like of shape (n_samples, n_features)
             The training feature data.
 
-        y : array-like of shape = (n_samples,)
+        y : array-like of shape (n_samples,)
             The target values (class labels).
 
         Returns
         -------
-        self : object
-            Returns self.
+        self : LogitBoost
+            Returns this LogitBoost estimator.
         """
         # Validate __init__() parameters
         self._validate_estimator()
@@ -117,105 +129,137 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         self.classes_, y = np.unique(y, return_inverse=True)
         self.n_classes_ = self.classes_.shape[0]
 
+        # Clear any previous estimators and create a new list of estimators
+        self.estimators_ = []
+
         # Delegate actual fitting to helper methods
         if self.n_classes_ == 2:
             return self._fit_binary(X, y, random_state)
         else:
             return self._fit_multiclass(X, y, random_state)
 
-    def _validate_estimator(self, default=None):
-        """Check the estimator and set the `base_estimator_` attribute."""
-        # The default regressor for LogitBoost is a decision stump
-        default = DecisionTreeRegressor(max_depth=1)
-        super(LogitBoost, self)._validate_estimator(default=default)
-
-        if not is_regressor(self.base_estimator_):
-            raise ValueError(
-                "LogitBoost requires the base estimator to be a regressor.")
-
-        if (not self.bootstrap and
-                not has_fit_parameter(self.base_estimator_, "sample_weight")):
-            estimator_name = self.base_estimator_.__class__.__name__
-            raise ValueError(f"{estimator_name} doesn't support sample_weight.")
-
     def _fit_binary(self, X, y, random_state):
         """Fit a binary LogitBoost model (Algorithm 3 in Friedman, Hastie, &
-        Tibshirani (2000)).
-        """
-        # Clear any previous estimators and create a new list of estimators
-        self.estimators_ = []
-
+        Tibshirani (2000))."""
         # Initialize with uniform class probabilities
         prob = np.empty(X.shape[0], dtype=np.float64)
         prob[:] = 0.5
 
-        response = np.zeros(X.shape[0], dtype=np.float64)
+        # Initialize zero scores for each observation
+        scores = np.zeros(X.shape[0], dtype=np.float64)
 
+        # Do the boosting iterations to build the ensemble of estimators
         for iboost in range(self.n_estimators):
-            # Compute the working response and weights
-            sample_weight = np.maximum(prob * (1 - prob), 2 * _MACHINE_EPSILON)
-            with np.errstate(divide="ignore", over="ignore"):
-                z = np.clip(np.where(y == 1, 1 / prob, -1 / (1 - prob)),
-                            a_min=-self.z_max, a_max=self.z_max)
-
-            # Fit the base estimator
-            X_train, z_train, sample_weight_train = \
-                self._get_training_sample(X, z, sample_weight, random_state)
-            estimator = self._make_estimator(append=True,
-                                             random_state=random_state)
-            if self.bootstrap:
-                estimator.fit(X_train, z_train)
-            else:
-                estimator.fit(X_train, z_train,
-                              sample_weight=sample_weight_train)
-
-            # Update the response and the probability estimates
-            if iboost < self.n_estimators - 1:
-                z_pred = estimator.predict(X)
-                response += 0.5 * self.learning_rate * z_pred
-                prob = np.exp(response)
-                prob /= (prob + np.exp(-response))
+            scores, prob = self._boost_binary(iboost, X, y, scores, prob,
+                                              random_state)
 
         return self
 
     def _fit_multiclass(self, X, y, random_state):
         """Fit a multiclass LogitBoost model (Algorithm 6 in Friedman, Hastie, &
-        Tibshirani (2000)).
-        """
-        # TODO
-        raise NotImplementedError()
+        Tibshirani (2000))."""
+        # Initialize with uniform class probabilities
+        prob = np.empty((X.shape[0], self.n_classes_), dtype=np.float64)
+        prob[:] = 1 / self.n_classes_
 
-    def _get_training_sample(self, X, z, sample_weight, random_state):
-        """Get training data for the base estimator at each boosting iteration.
-        """
-        # Normalize the weights
-        sample_weight /= sample_weight.sum()
+        # Initialize zero scores for each observation
+        scores = np.zeros((X.shape[0], self.n_classes_), dtype=np.float64)
 
+        # Get one-hot-encoded class indicators
+        y_hot = np.eye(self.n_classes_)[y]
+
+        # Do the boosting iterations to build the ensemble of estimators
+        for iboost in range(self.n_estimators):
+            scores, prob = self._boost_multiclass(iboost, X, y_hot, scores,
+                                                  prob, random_state)
+
+        return self
+
+    def _boost_binary(self, iboost, X, y, scores, prob, random_state):
+        """One boosting iteration for the binary classification case."""
+        # Compute the working response and weights
+        sample_weight, z = _update_weights_and_response(y, prob, self.z_max)
+
+        # Fit a new base estimator
+        X_train, z_train, kwargs = \
+            self._boost_fit_args(X, z, sample_weight, random_state)
+        estimator = self._make_estimator(append=True,
+                                         random_state=random_state)
+        estimator.fit(X_train, z_train, **kwargs)
+
+        # Update the scores and the probability estimates
+        if iboost < self.n_estimators - 1:
+            z_pred = estimator.predict(X)
+            scores += 0.5 * z_pred
+            prob = _binary_prob_from_scores(scores)
+
+        return scores, prob
+
+    def _boost_multiclass(self, iboost, X, y_hot, scores, prob, random_state):
+        """One boosting iteration for the multiclass classification case."""
+        # List of estimators for this boosting iteration
+        estimators_iboost = []
+
+        # Create a new estimator for each class
+        for iclass in range(self.n_classes_):
+            # Compute the working response and weights
+            sample_weight, z = _update_weights_and_response(y_hot[:, iclass],
+                                                            prob[:, iclass],
+                                                            self.z_max)
+
+            # Fit a new base estimator
+            X_train, z_train, kwargs = \
+                self._boost_fit_args(X, z, sample_weight, random_state)
+            estimator = self._make_estimator(append=False,
+                                             random_state=random_state)
+            estimator.fit(X_train, z_train, **kwargs)
+            estimators_iboost.append(estimator)
+
+        # Update the scores and the probability estimates
+        if iboost < self.n_estimators - 1:
+            predictions = np.asarray([estimator.predict(X) for estimator in
+                                      estimators_iboost]).T
+            predictions -= predictions.mean(axis=1, keepdims=True)
+            predictions *= (self.n_classes_ - 1) / self.n_classes_
+
+            scores += predictions
+            prob = _multiclass_prob_from_scores(scores)
+
+        self.estimators_.append(estimators_iboost)
+        return scores, prob
+
+    def _boost_fit_args(self, X, z, sample_weight, random_state):
+        """Get arguments to fit a base estimator during boosting."""
         if self.bootstrap:
             # Draw a weighted bootstrap sample
             n_samples = X.shape[0]
             ind = random_state.choice(n_samples, n_samples, replace=True,
-                                      p=sample_weight)
-            X = X[ind]
-            z = z[ind]
-            sample_weight = None
+                                      p=(sample_weight / sample_weight.sum()))
+            X_train = X[ind]
+            z_train = z[ind]
+            kwargs = dict()
         else:
-            # Perform weight trimming if necessary
-            if self.weight_trim_threshold is None:
-                weight_trim_threshold = np.sqrt(_MACHINE_EPSILON)
-            else:
-                weight_trim_threshold = self.weight_trim_threshold
+            # Perform weight trimming
+            threshold = np.quantile(sample_weight, self.weight_trim_quantile)
+            mask = (sample_weight >= threshold)
+            X_train = X[mask]
+            z_train = z[mask]
+            kwargs = dict(sample_weight=sample_weight[mask])
 
-            if weight_trim_threshold > 0:
-                mask = (sample_weight > weight_trim_threshold)
-                X = X[mask]
-                z = z[mask]
-                sample_weight = sample_weight[mask]
-
-        return X, z, sample_weight
+        return X_train, z_train, kwargs
 
     def predict(self, X):
-        """TODO
+        """Predict class labels.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Returns
+        -------
+        labels : numpy.ndarray of shape (n_samples,)
+            Array of predicted class labels, one for each input.
         """
         scores = self.decision_function(X)
         if self.n_classes_ == 2:
@@ -225,18 +269,42 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         return self.classes_[indices]
 
     def predict_proba(self, X):
-        """TODO
+        """Predict class probabilities.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Returns
+        -------
+        prob : numpy.ndarray of shape (n_samples, n_classes)
+            Array of class probabilities of shape (n_samples, n_classes), one
+            probability for each (input, class) pair.
         """
-        check_is_fitted(self, "estimators_")
+        scores = self.decision_function(X)
         if self.n_classes_ == 2:
-            predictions = \
-                (estimator.predict(X) for estimator in self.estimators_)
-            return np.fromiter(predictions, dtype=np.float64).sum()
+            prob = _binary_prob_from_scores(scores)
+            return np.column_stack((1 - prob, prob))
         else:
-            raise NotImplementedError()
+            return _multiclass_prob_from_scores(scores)
 
     def decision_function(self, X):
-        """TODO
+        """Compute the decision function of `X`.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Returns
+        -------
+        prob : numpy.ndarray of shape (n_samples, k)
+            The decision function of the input samples. The order of outputs is
+            the same of that of the `classes_` attribute. Binary classification
+            is a special cases with `k` = 1, otherwise `k` = `n_classes`. For
+            binary classification, positive values indicate class 1 and negative
+            values indicate class 0.
         """
         check_is_fitted(self, "estimators_")
         if self.n_classes_ == 2:
@@ -244,5 +312,30 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
                                       in self.estimators_], dtype=np.float64)
             return predictions.sum(axis=0)
         else:
-            raise NotImplementedError()
+            predictions = np.asarray(
+                [[estimator.predict(X) for estimator in estimators]
+                 for estimators in self.estimators_], dtype=np.float64)
+            return predictions.sum(axis=0).T
 
+
+def _update_weights_and_response(y, prob, z_max):
+    """Compute the working weights and response for a boosting iteration."""
+    with np.errstate(divide="ignore", over="ignore"):
+        z = np.clip(np.where(y == 1, 1 / prob, -1 / (1 - prob)),
+                    a_min=-z_max, a_max=z_max)
+
+    sample_weight = np.maximum(prob * (1 - prob), 2 * _MACHINE_EPSILON)
+
+    return sample_weight, z
+
+
+def _binary_prob_from_scores(scores):
+    """Convert a LogitBoost score into a probability (binary case)."""
+    exp_scores = np.exp(scores)
+    return exp_scores / (exp_scores + np.exp(-scores))
+
+
+def _multiclass_prob_from_scores(scores):
+    """Convert a LogitBoost score into a probability (multiclass case)."""
+    exp_scores = np.exp(scores)
+    return exp_scores / exp_scores.sum(axis=1, keepdims=True)

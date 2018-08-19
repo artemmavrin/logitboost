@@ -33,7 +33,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         stump is used.
 
     n_estimators : int, optional
-        The number of estimators in the ensemble.
+        The number of estimators per class in the ensemble.
 
     weight_trim_quantile : float, optional
         Threshold for weight trimming (see Section 9 in [1]_). The distribution

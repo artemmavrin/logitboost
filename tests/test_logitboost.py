@@ -15,7 +15,7 @@ def test_sklearn_api():
     check_estimator(LogitBoost)
 
 
-def _toy_dataset_test(*, load_func, test_size=(1. / 3), random_state=0,
+def _toy_dataset_test(load_func, test_size=(1. / 3), random_state=0,
                       min_accuracy_train=0.8, min_accuracy_test=0.8):
     """Create a classification unit test from a scikit-learn toy dataset."""
     # Fetch the dataset
@@ -43,14 +43,14 @@ def _toy_dataset_test(*, load_func, test_size=(1. / 3), random_state=0,
 
 def test_breast_cancer():
     """Simple binary classification on the breast cancer dataset."""
-    _toy_dataset_test(load_func=load_breast_cancer)
+    _toy_dataset_test(load_breast_cancer)
 
 
 def test_digits():
     """Simple multiclass classification on the handwritten digits dataset."""
-    _toy_dataset_test(load_func=load_digits)
+    _toy_dataset_test(load_digits)
 
 
 def test_iris():
     """Simple multiclass classification on the iris dataset."""
-    _toy_dataset_test(load_func=load_iris)
+    _toy_dataset_test(load_iris)

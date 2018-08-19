@@ -1,4 +1,5 @@
 PYTHON := python3
+PYTHON2 := python
 LINT := pylint
 SETUP := setup.py
 SETUPOPTS := -q
@@ -6,13 +7,14 @@ PACKAGE := logitboost
 DOC := doc
 RM := rm -rf
 
-.PHONY: help install uninstall html test clean lint trim
+.PHONY: help install uninstall html test test2 clean lint trim
 
 help:
 	@ echo "Usage:"
 	@ echo "\tmake install   \t install the package using setuptools."
 	@ echo "\tmake html      \t generate documentation using sphinx."
 	@ echo "\tmake test      \t run unit tests using pytest."
+	@ echo "\tmake test2     \t run unit tests using pytest in Python 2."
 	@ echo "\tmake lint      \t check the code using pylint."
 	@ echo "\tmake clean     \t remove auxiliary files."
 
@@ -26,6 +28,9 @@ html: clean
 
 test:
 	$(PYTHON) $(SETUP) $(SETUPOPTS) test
+
+test2:
+	$(PYTHON2) $(SETUP) $(SETUPOPTS) test
 
 lint:
 	$(LINT) $(PACKAGE)

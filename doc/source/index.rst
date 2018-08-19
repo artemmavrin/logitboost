@@ -2,20 +2,20 @@
 LogitBoost
 ==========
 
-.. image:: https://img.shields.io/badge/python-3.7-blue.svg
-    :target: https://badge.fury.io/py/logitboost
+.. image:: https://img.shields.io/pypi/pyversions/logitboost.svg
+    :target: https://pypi.org/project/logitboost/
     :alt: Python Version
 
-.. image:: https://badge.fury.io/py/logitboost.svg
-    :target: https://badge.fury.io/py/logitboost
-    :alt: Package Version
+.. image:: https://img.shields.io/pypi/v/logitboost.svg
+    :target: https://pypi.org/project/logitboost/
+    :alt: PyPI Package Version
 
 .. image:: https://readthedocs.org/projects/logitboost/badge/?version=latest
     :target: https://logitboost.readthedocs.io/?badge=latest
     :alt: Documentation Status
 
-This is a Python 3 implementation of the LogitBoost algorithm [1]_ built on top
-of `scikit-learn <http://scikit-learn.org>`__.
+This is a Python implementation of the LogitBoost algorithm [1]_ built on top of
+`scikit-learn <http://scikit-learn.org>`__.
 
 .. toctree::
     :maxdepth: 1

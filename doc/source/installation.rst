@@ -20,5 +20,5 @@ recent version of it can be installed with the
 
   python -m pip install logitboost
 
-Make sure your Python version is at least 3.6 (LogitBoost was developed using
-Python 3.7).
+This project was developed in Python 3.7, but it should work with Python 2.7 and
+earlier Python 3 versions.

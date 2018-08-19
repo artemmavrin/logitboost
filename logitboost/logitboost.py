@@ -69,14 +69,6 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         `JSTOR <https://www.jstor.org/stable/2674028>`__.
         `Project Euclid <https://projecteuclid.org/euclid.aos/1016218223>`__.
     """
-    # Distinct class labels found in the training sample
-    classes_: np.ndarray
-
-    # Number of distinct class labels found in the training sample
-    n_classes_: int
-
-    # All estimators trained by the model
-    estimators_: list
 
     def __init__(self, base_estimator=None, n_estimators=50,
                  weight_trim_quantile=0.05, z_max=4., bootstrap=False,
@@ -101,7 +93,8 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         if (not self.bootstrap and
                 not has_fit_parameter(self.base_estimator_, "sample_weight")):
             estimator_name = self.base_estimator_.__class__.__name__
-            raise ValueError(f"{estimator_name} doesn't support sample_weight.")
+            error_msg = "%s doesn't support sample_weight." % estimator_name
+            raise ValueError(error_msg)
 
     def fit(self, X, y):
         """Build a LogitBoost classifier from the training data (X, y).
@@ -162,7 +155,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         Tibshirani (2000))."""
         # Initialize with uniform class probabilities
         prob = np.empty((X.shape[0], self.n_classes_), dtype=np.float64)
-        prob[:] = 1 / self.n_classes_
+        prob[:] = 1. / self.n_classes_
 
         # Initialize zero scores for each observation
         scores = np.zeros((X.shape[0], self.n_classes_), dtype=np.float64)
@@ -220,9 +213,9 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         # Update the scores and the probability estimates
         if iboost < self.n_estimators - 1:
             predictions = np.asarray([estimator.predict(X) for estimator in
-                                      estimators_iboost]).T
+                                      estimators_iboost], dtype=np.float64).T
             predictions -= predictions.mean(axis=1, keepdims=True)
-            predictions *= (self.n_classes_ - 1) / self.n_classes_
+            predictions *= (self.n_classes_ - 1.) / self.n_classes_
 
             scores += predictions
             prob = _multiclass_prob_from_scores(scores)
@@ -324,10 +317,10 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 def _update_weights_and_response(y, prob, z_max):
     """Compute the working weights and response for a boosting iteration."""
     with np.errstate(divide="ignore", over="ignore"):
-        z = np.clip(np.where(y == 1, 1 / prob, -1 / (1 - prob)),
+        z = np.clip(np.where(y == 1, 1. / prob, -1. / (1. - prob)),
                     a_min=-z_max, a_max=z_max)
 
-    sample_weight = np.maximum(prob * (1 - prob), 2 * _MACHINE_EPSILON)
+    sample_weight = np.maximum(prob * (1. - prob), 2. * _MACHINE_EPSILON)
 
     return sample_weight, z
 

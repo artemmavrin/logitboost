@@ -7,8 +7,8 @@ import logitboost
 
 def load_file(filename):
     filename = path.join(path.abspath(path.dirname(__file__)), filename)
-    with open(filename, "r") as file:
-        return file.read()
+    with open(filename, "r") as _file:
+        return _file.read()
 
 
 setup(
@@ -25,5 +25,12 @@ setup(
     install_requires=["numpy", "sklearn"],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
-    zip_safe=False
+    zip_safe=False,
+    classifiers=[
+        "Programming Language :: Python :: 2",
+        "Programming Language :: Python :: 2.7",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+    ]
 )

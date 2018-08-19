@@ -7,6 +7,7 @@ from sklearn.ensemble import BaseEnsemble
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.utils.validation import (check_X_y, check_is_fitted,
                                       check_random_state, has_fit_parameter)
+from sklearn.utils.multiclass import check_classification_targets
 
 # The smallest representable 64 bit floating point positive number eps such that
 # 1.0 + eps != 1.0
@@ -124,6 +125,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
         # Validate training data
         X, y = check_X_y(X, y)
+        check_classification_targets(y)
 
         # Convert y to class label indices
         self.classes_, y = np.unique(y, return_inverse=True)
@@ -240,7 +242,8 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             kwargs = dict()
         else:
             # Perform weight trimming
-            threshold = np.quantile(sample_weight, self.weight_trim_quantile)
+            threshold = np.quantile(sample_weight, self.weight_trim_quantile,
+                                    interpolation="lower")
             mask = (sample_weight >= threshold)
             X_train = X[mask]
             z_train = z[mask]

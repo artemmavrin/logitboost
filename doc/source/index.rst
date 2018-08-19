@@ -17,31 +17,13 @@ LogitBoost
 This is a Python 3 implementation of the LogitBoost algorithm [1]_ built on top
 of `scikit-learn <http://scikit-learn.org>`__.
 
-Website: https://logitboost.readthedocs.io
+.. toctree::
+    :maxdepth: 1
+    :caption: Contents:
 
-Installation
-------------
-
-The latest version of LogitBoost can be installed directly after cloning from
-GitHub.
-
-.. code-block :: shell
-
-  git clone https://github.com/artemmavrin/logitboost.git
-  cd survive
-  make install
-
-Moreover, LogitBoost is on the
-`Python Package Index (PyPI) <https://pypi.org/project/logitboost/>`__, so a
-recent version of it can be installed with the
-`pip <https://pip.pypa.io/en/stable/>`__ tool.
-
-.. code-block :: shell
-
-  python -m pip install logitboost
-
-Make sure your Python version is at least 3.6 (LogitBoost was developed using
-Python 3.7).
+    installation
+    The LogitBoost Class <logitboost>
+    examples
 
 References
 ----------

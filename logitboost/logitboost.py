@@ -460,6 +460,41 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
                 predictions = predictions + predictions_iboost
                 yield predictions
 
+    @property
+    def feature_importances_(self):
+        """Return the feature importances (the higher, the more important the
+        feature).
+
+        Returns
+        -------
+        feature_importances_ : numpy.ndarray of shape (n_features,)
+            The feature importances.
+
+        Raises
+        ------
+        AttributeError
+            Raised if the base estimator doesn't support a
+            `feature_importances_` attribute.
+
+        NotImplementedError
+            Raised if the task is multiclass classification: feature importance
+            is currently only supported for binary classification.
+        """
+        check_is_fitted(self, "estimators_")
+
+        if self.n_classes_ != 2:
+            raise NotImplementedError(
+                "Feature importances is currently only implemented for binary "
+                "classification tasks.")
+
+        try:
+            return np.sum([estimator.feature_importances_ for estimator
+                           in self.estimators_], axis=0) / len(self.estimators_)
+        except AttributeError:
+            raise AttributeError(
+                "Unable to compute feature importances since base_estimator "
+                "does not have a feature_importances_ attribute")
+
 
 def _update_weights_and_response(y, prob, z_max):
     """Compute the working weights and response for a boosting iteration."""

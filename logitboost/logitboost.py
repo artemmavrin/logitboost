@@ -56,7 +56,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
     bootstrap : bool, optional
         If True, each boosting iteration trains the base estimator using a
-        weighted bootstrap sample of the training data. If False, each bootstrap
+        weighted bootstrap sample of the training data. If False, each boosting
         iteration trains the base estimator using the full (weighted) training
         sample. In this case, the base estimator must support sample weighting
         by means of a `sample_weight` parameter in its `fit()` method.
@@ -88,6 +88,11 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
     n_features_ : int
         Number of features, inferred during fitting.
+
+    See Also
+    --------
+    sklearn.tree.DecisionTreeRegressor
+        The default base estimator (with `max_depth` = 1).
 
     References
     ----------
@@ -122,7 +127,9 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         if (not self.bootstrap and
                 not has_fit_parameter(self.base_estimator_, "sample_weight")):
             estimator_name = self.base_estimator_.__class__.__name__
-            error_msg = "%s doesn't support sample_weight." % estimator_name
+            error_msg = ("%s doesn't support sample_weight. Either choose a "
+                         "base estimator that supports sample weighting or set "
+                         "bootstrap=True." % estimator_name)
             raise ValueError(error_msg)
 
     def fit(self, X, y):

@@ -18,8 +18,10 @@ LogitBoost
     :target: https://logitboost.readthedocs.io/?badge=latest
     :alt: Documentation Status
 
-This is a Python implementation of the LogitBoost algorithm [1]_ built on top of
-`scikit-learn <http://scikit-learn.org>`__.
+This is a Python implementation of the LogitBoost classification algorithm [1]_
+built on top of `scikit-learn <http://scikit-learn.org>`__.
+It supports both binary and multiclass classification; see the
+`examples <https://logitboost.readthedocs.io/examples.html>`__.
 
 .. toctree::
     :maxdepth: 1

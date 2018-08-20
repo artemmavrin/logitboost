@@ -22,7 +22,11 @@ setup(
     author_email="amavrin@ucsd.edu",
     packages=sorted(find_packages()),
     include_package_data=True,
-    install_requires=["numpy>=1.15", "scikit-learn>=0.19"],
+    install_requires=[
+        "numpy>=1.15",
+        "scipy>=1.1",
+        "scikit-learn>=0.19"
+    ],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     zip_safe=False,

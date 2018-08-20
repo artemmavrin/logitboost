@@ -252,12 +252,12 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
         return X_train, z_train, kwargs
 
-    def staged_score(self, X, y):
-        """Return staged scores for data (`X`, `y`).
+    def staged_score(self, X, y, sample_weight=None):
+        """Return staged accuracy scores on the given test data and labels.
 
-        This generator method yields the ensemble score after each iteration of
-        boosting and therefore allows monitoring, such as to determine the
-        score on a test set after each boost.
+        This generator method yields the ensemble accuracy score after each
+        iteration of boosting and therefore allows monitoring, such as
+        determine the score on a test set after each boost.
 
         Parameters
         ----------
@@ -267,13 +267,16 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         y : array-like of shape (n_samples,)
             The target values (class labels).
 
+        sample_weight : array-like of shape (n_samples,)
+            Weights for the samples.
+
         Yields
         ------
-        acc : float
+        accuracy : float
             Accuracy at each stage of boosting.
         """
         for y_pred in self.staged_predict(X):
-            yield accuracy_score(y, y_pred)
+            yield accuracy_score(y, y_pred, sample_weight=sample_weight)
 
     def predict(self, X):
         """Predict class labels for `X`.

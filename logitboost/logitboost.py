@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.base import ClassifierMixin, MetaEstimatorMixin
 from sklearn.base import clone, is_regressor
 from sklearn.ensemble import BaseEnsemble
+from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import (check_X_y, check_is_fitted,
@@ -104,7 +105,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             raise ValueError(error_msg)
 
     def fit(self, X, y):
-        """Build a LogitBoost classifier from the training data (X, y).
+        """Build a LogitBoost classifier from the training data (`X`, `y`).
 
         Parameters
         ----------
@@ -251,8 +252,31 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
         return X_train, z_train, kwargs
 
+    def staged_score(self, X, y):
+        """Return staged scores for data (`X`, `y`).
+
+        This generator method yields the ensemble score after each iteration of
+        boosting and therefore allows monitoring, such as to determine the
+        score on a test set after each boost.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input samples.
+
+        y : array-like of shape (n_samples,)
+            The target values (class labels).
+
+        Yields
+        ------
+        acc : float
+            Accuracy at each stage of boosting.
+        """
+        for y_pred in self.staged_predict(X):
+            yield accuracy_score(y, y_pred)
+
     def predict(self, X):
-        """Predict class labels.
+        """Predict class labels for `X`.
 
         Parameters
         ----------
@@ -269,10 +293,35 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             indices = (scores > 0).astype(np.int)
         else:
             indices = scores.argmax(axis=1)
-        return self.classes_[indices]
+        return self.classes_.take(indices, axis=0)
+
+    def staged_predict(self, X):
+        """Return predictions for `X` at each boosting iteration.
+
+        This generator method yields the ensemble prediction after each
+        iteration of boosting and therefore allows monitoring, such as to
+        determine the prediction on a test set after each boost.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Yields
+        ------
+        labels : numpy.ndarray of shape (n_samples,)
+            Array of predicted class labels, one for each input, at each
+            boosting iteration.
+        """
+        if self.n_classes_ == 2:
+            for scores in self.staged_decision_function(X):
+                yield self.classes_.take((scores > 0).astype(np.int), axis=0)
+        else:
+            for scores in self.staged_decision_function(X):
+                yield self.classes_.take(scores.argmax(axis=1), axis=0)
 
     def predict_proba(self, X):
-        """Predict class probabilities.
+        """Predict class probabilities for `X`.
 
         Parameters
         ----------
@@ -292,6 +341,34 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         else:
             return _multiclass_prob_from_scores(scores)
 
+    def staged_predict_proba(self, X):
+        """Predict class probabilities for `X` at each boosting iteration.
+
+        This generator method yields the ensemble predicted class probabilities
+        after each iteration of boosting and therefore allows monitoring, such
+        as to determine the predicted class probabilities on a test set after
+        each boost.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Yields
+        ------
+        prob : numpy.ndarray of shape (n_samples, n_classes)
+            Array of class probabilities of shape (n_samples, n_classes), one
+            probability for each (input, class) pair, at each boosting
+            iteration.
+        """
+        if self.n_classes_ == 2:
+            for scores in self.staged_decision_function(X):
+                prob = _binary_prob_from_scores(scores)
+                yield np.column_stack((1 - prob, prob))
+        else:
+            for scores in self.staged_decision_function(X):
+                yield _multiclass_prob_from_scores(scores)
+
     def decision_function(self, X):
         """Compute the decision function of `X`.
 
@@ -302,7 +379,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
         Returns
         -------
-        prob : numpy.ndarray of shape (n_samples, k)
+        scores : numpy.ndarray of shape (n_samples, k)
             The decision function of the input samples. The order of outputs is
             the same of that of the `classes_` attribute. Binary classification
             is a special cases with `k` = 1, otherwise `k` = `n_classes`. For
@@ -319,6 +396,42 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
                 [[estimator.predict(X) for estimator in estimators]
                  for estimators in self.estimators_], dtype=np.float64)
             return predictions.sum(axis=0).T
+
+    def staged_decision_function(self, X):
+        """Compute decision function of `X` for each boosting iteration.
+
+        This method allows monitoring (i.e. determine error on testing set)
+        after each boosting iteration.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Yields
+        ------
+        scores : numpy.ndarray of shape (n_samples, k)
+            The decision function of the input samples. The order of outputs is
+            the same of that of the `classes_` attribute. Binary classification
+            is a special cases with `k` = 1, otherwise `k` = `n_classes`. For
+            binary classification, positive values indicate class 1 and negative
+            values indicate class 0.
+        """
+        check_is_fitted(self, "estimators_")
+
+        if self.n_classes_ == 2:
+            predictions = 0.
+            for estimator in self.estimators_:
+                predictions = predictions + estimator.predict(X)
+                yield predictions
+        else:
+            predictions = 0.
+            for estimators_iboost in self.estimators_:
+                predictions_iboost \
+                    = np.asarray([estimator.predict(X) for estimator
+                                  in estimators_iboost], dtype=np.float64).T
+                predictions = predictions + predictions_iboost
+                yield predictions
 
 
 def _update_weights_and_response(y, prob, z_max):

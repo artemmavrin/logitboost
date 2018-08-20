@@ -14,13 +14,13 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('../../'))
 sys.path.insert(0, os.path.abspath('sphinxext'))
 
 import logitboost
 
 from github_link import make_linkcode_resolve
-
 
 # -- Project information -----------------------------------------------------
 
@@ -32,7 +32,6 @@ author = 'Artem Mavrin'
 version = logitboost.__version__
 # The full version, including alpha/beta/rc tags
 release = version
-
 
 # -- General configuration ---------------------------------------------------
 
@@ -79,7 +78,6 @@ exclude_patterns = ['_build', '**.ipynb_checkpoints']
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'default'
 
-
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
@@ -114,7 +112,6 @@ html_static_path = ['_static']
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'logitboostdoc'
 
-
 # -- Options for LaTeX output ------------------------------------------------
 
 latex_elements = {
@@ -143,7 +140,6 @@ latex_documents = [
      'Artem Mavrin', 'manual'),
 ]
 
-
 # -- Options for manual page output ------------------------------------------
 
 # One entry per manual page. List of tuples
@@ -152,7 +148,6 @@ man_pages = [
     (master_doc, 'logitboost', 'logitboost Documentation',
      [author], 1)
 ]
-
 
 # -- Options for Texinfo output ----------------------------------------------
 
@@ -165,17 +160,16 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-
 # -- Extension configuration -------------------------------------------------
 
 # -- Options for intersphinx extension ---------------------------------------
 
 # Example configuration for intersphinx: refer to the Python standard library.
 intersphinx_mapping = \
-    dict(python=("https://docs.python.org/3", None),
-         numpy=("https://docs.scipy.org/doc/numpy", None),
-         sklearn=("http://scikit-learn.org/stable",
-                  (None, "./_intersphinx/sklearn-objects.inv")))
+    {"python": ("https://docs.python.org/3", None),
+     "numpy": ("https://docs.scipy.org/doc/numpy", None),
+     "scikit-learn": ("http://scikit-learn.org/stable",
+                      (None, "./_intersphinx/sklearn-objects.inv"))}
 
 autosummary_generate = True
 

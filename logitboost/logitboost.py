@@ -2,6 +2,8 @@
 
 from __future__ import division
 
+import warnings
+
 import numpy as np
 from sklearn.base import ClassifierMixin, MetaEstimatorMixin
 from sklearn.base import clone, is_regressor
@@ -132,7 +134,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
                          "bootstrap=True." % estimator_name)
             raise ValueError(error_msg)
 
-    def fit(self, X, y):
+    def fit(self, X, y, **fit_params):
         """Build a LogitBoost classifier from the training data (`X`, `y`).
 
         Parameters
@@ -142,6 +144,10 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
         y : array-like of shape (n_samples,)
             The target values (class labels).
+
+        fit_params : keyword arguments
+            Additional keyword arguments to pass to the base estimator's `fit()`
+            method.
 
         Returns
         -------
@@ -166,13 +172,21 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         # Clear any previous estimators and create a new list of estimators
         self.estimators_ = []
 
+        # Check extra keyword arguments for sample_weight: if the user specifies
+        # the sample weight manually, then the boosting iterations will never
+        # get to update them themselves
+        if "sample_weight" in fit_params:
+            warnings.warn("Ignoring user-specified sample_weight.",
+                          RuntimeWarning)
+            del fit_params["sample_weight"]
+
         # Delegate actual fitting to helper methods
         if self.n_classes_ == 2:
-            return self._fit_binary(X, y, random_state)
+            return self._fit_binary(X, y, random_state, fit_params)
         else:
-            return self._fit_multiclass(X, y, random_state)
+            return self._fit_multiclass(X, y, random_state, fit_params)
 
-    def _fit_binary(self, X, y, random_state):
+    def _fit_binary(self, X, y, random_state, fit_params):
         """Fit a binary LogitBoost model (Algorithm 3 in Friedman, Hastie, &
         Tibshirani (2000))."""
         # Initialize with uniform class probabilities
@@ -185,11 +199,11 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         # Do the boosting iterations to build the ensemble of estimators
         for iboost in range(self.n_estimators):
             scores, prob = self._boost_binary(iboost, X, y, scores, prob,
-                                              random_state)
+                                              random_state, fit_params)
 
         return self
 
-    def _fit_multiclass(self, X, y, random_state):
+    def _fit_multiclass(self, X, y, random_state, fit_params):
         """Fit a multiclass LogitBoost model (Algorithm 6 in Friedman, Hastie, &
         Tibshirani (2000))."""
         # Initialize with uniform class probabilities
@@ -205,11 +219,13 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         # Do the boosting iterations to build the ensemble of estimators
         for iboost in range(self.n_estimators):
             scores, prob = self._boost_multiclass(iboost, X, y_hot, scores,
-                                                  prob, random_state)
+                                                  prob, random_state,
+                                                  fit_params)
 
         return self
 
-    def _boost_binary(self, iboost, X, y, scores, prob, random_state):
+    def _boost_binary(self, iboost, X, y, scores, prob, random_state,
+                      fit_params):
         """One boosting iteration for the binary classification case."""
         # Compute the working response and weights
         sample_weight, z = _update_weights_and_response(y, prob, self.z_max)
@@ -219,6 +235,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             self._boost_fit_args(X, z, sample_weight, random_state)
         estimator = self._make_estimator(append=True,
                                          random_state=random_state)
+        kwargs.update(fit_params)
         estimator.fit(X_train, z_train, **kwargs)
 
         # Update the scores and the probability estimates
@@ -229,7 +246,8 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
         return scores, prob
 
-    def _boost_multiclass(self, iboost, X, y_hot, scores, prob, random_state):
+    def _boost_multiclass(self, iboost, X, y_hot, scores, prob, random_state,
+                          fit_params):
         """One boosting iteration for the multiclass classification case."""
         # List of estimators for this boosting iteration
         estimators_iboost = []
@@ -246,6 +264,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
                 self._boost_fit_args(X, z, sample_weight, random_state)
             estimator = self._make_estimator(append=False,
                                              random_state=random_state)
+            kwargs.update(fit_params)
             estimator.fit(X_train, z_train, **kwargs)
             estimators_iboost.append(estimator)
 

@@ -28,17 +28,18 @@ def _toy_dataset_test(load_func, test_size=(1. / 3), random_state=0,
         train_test_split(X, y, test_size=test_size, shuffle=True, stratify=y,
                          random_state=random_state)
 
-    # Fit a LogitBoost model
-    logitboost = LogitBoost(random_state=random_state)
-    logitboost.fit(X_train, y_train)
+    for bootstrap in (True, False):
+        # Fit a LogitBoost model
+        logitboost = LogitBoost(bootstrap=bootstrap, random_state=random_state)
+        logitboost.fit(X_train, y_train)
 
-    # Compute accuracy scores and assert minimum accuracy
-    y_pred_train = logitboost.predict(X_train)
-    y_pred_test = logitboost.predict(X_test)
-    accuracy_train = accuracy_score(y_train, y_pred_train)
-    accuracy_test = accuracy_score(y_test, y_pred_test)
-    assert accuracy_train >= min_accuracy_train
-    assert accuracy_test >= min_accuracy_test
+        # Compute accuracy scores and assert minimum accuracy
+        y_pred_train = logitboost.predict(X_train)
+        y_pred_test = logitboost.predict(X_test)
+        accuracy_train = accuracy_score(y_train, y_pred_train)
+        accuracy_test = accuracy_score(y_test, y_pred_test)
+        assert accuracy_train >= min_accuracy_train
+        assert accuracy_test >= min_accuracy_test
 
 
 def test_breast_cancer():

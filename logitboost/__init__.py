@@ -2,4 +2,4 @@
 
 from .logitboost import LogitBoost
 
-__version__ = "0.3"
+__version__ = "0.4"

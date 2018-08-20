@@ -86,6 +86,9 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         then the task is binary classification. Otherwise, the task is
         multiclass classification.
 
+    n_features_ : int
+        Number of features, inferred during fitting.
+
     References
     ----------
     .. [1] Jerome Friedman, Trevor Hastie, and Robert Tibshirani. "Additive
@@ -149,6 +152,9 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         # Convert y to class label indices
         self.classes_, y = np.unique(y, return_inverse=True)
         self.n_classes_ = self.classes_.shape[0]
+
+        # Extract number of features in X
+        self.n_features_ = X.shape[1]
 
         # Clear any previous estimators and create a new list of estimators
         self.estimators_ = []

@@ -68,6 +68,24 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         number generator is the :class:`~numpy.random.RandomState` instance used
         by :mod:`numpy.random`.
 
+    Attributes
+    ----------
+    classes_ : numpy.ndarray
+        One-dimensional array of unique class labels extracted from the training
+        data target vector during fitting.
+
+    estimators_ : list
+        All the estimators in the ensemble after fitting. If the task is binary
+        classification, this is a list of `n_estimators` fitted base estimators.
+        If the task is multiclass classification, this is a list of
+        `n_estimators` lists, each containing one base estimator for each class
+        label.
+
+    n_classes_ : int
+        Number of classes (length of the `classes_` array). If `n_classes` is 2,
+        then the task is binary classification. Otherwise, the task is
+        multiclass classification.
+
     References
     ----------
     .. [1] Jerome Friedman, Trevor Hastie, and Robert Tibshirani. "Additive

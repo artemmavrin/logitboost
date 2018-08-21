@@ -175,8 +175,8 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         # Delegate actual fitting to helper methods
         if self.n_classes_ == 2:
             return self._fit_binary(X, y, random_state, fit_params)
-        else:
-            return self._fit_multiclass(X, y, random_state, fit_params)
+
+        return self._fit_multiclass(X, y, random_state, fit_params)
 
     def _fit_binary(self, X, y, random_state, fit_params):
         """Fit a binary LogitBoost model (Algorithm 3 in Friedman, Hastie, &
@@ -383,8 +383,8 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         if self.n_classes_ == 2:
             prob = _binary_prob_from_scores(scores)
             return np.column_stack((1 - prob, prob))
-        else:
-            return _multiclass_prob_from_scores(scores)
+
+        return _multiclass_prob_from_scores(scores)
 
     def staged_predict_proba(self, X):
         """Predict class probabilities for `X` at each boosting iteration.
@@ -436,11 +436,11 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             predictions = np.asarray([estimator.predict(X) for estimator
                                       in self.estimators_], dtype=np.float64)
             return predictions.sum(axis=0)
-        else:
-            predictions = np.asarray(
-                [[estimator.predict(X) for estimator in estimators]
-                 for estimators in self.estimators_], dtype=np.float64)
-            return predictions.sum(axis=0).T
+
+        predictions = np.asarray(
+            [[estimator.predict(X) for estimator in estimators]
+             for estimators in self.estimators_], dtype=np.float64)
+        return predictions.sum(axis=0).T
 
     def staged_decision_function(self, X):
         """Compute decision function of `X` for each boosting iteration.

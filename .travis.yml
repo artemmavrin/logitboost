@@ -15,7 +15,7 @@ install:
   - python setup.py install
 # command to run tests
 script:
-  - coverage run -m pytest
+  - make coverage
   - codecov
 # turn off email notifications
 notifications:

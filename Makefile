@@ -7,7 +7,7 @@ PACKAGE := logitboost
 DOC := doc
 RM := rm -rf
 
-.PHONY: help install uninstall html test test2 clean lint trim
+.PHONY: help install html test test2 coverage clean lint trim
 
 help:
 	@ echo "Usage:"
@@ -31,6 +31,10 @@ test:
 
 test2:
 	$(PYTHON2) $(SETUP) $(SETUPOPTS) test
+
+coverage: clean
+	coverage run -m pytest
+	coverage report
 
 lint:
 	$(LINT) $(PACKAGE)

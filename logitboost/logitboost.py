@@ -12,7 +12,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import (check_X_y, check_is_fitted,
-                                      check_random_state, has_fit_parameter)
+                                      check_random_state)
 
 # The smallest representable 64 bit floating point positive number eps such that
 # 1.0 + eps != 1.0
@@ -116,7 +116,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         self.bootstrap = bootstrap
         self.random_state = random_state
 
-    def _validate_estimator(self, default=None):
+    def _validate_estimator(self):
         """Check the estimator and set the `base_estimator_` attribute."""
         # The default regressor for LogitBoost is a decision stump
         default = clone(_BASE_ESTIMATOR_DEFAULT)
@@ -125,14 +125,6 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         if not is_regressor(self.base_estimator_):
             raise ValueError(
                 "LogitBoost requires the base estimator to be a regressor.")
-
-        if (not self.bootstrap and
-                not has_fit_parameter(self.base_estimator_, "sample_weight")):
-            estimator_name = self.base_estimator_.__class__.__name__
-            error_msg = ("%s doesn't support sample_weight. Either choose a "
-                         "base estimator that supports sample weighting or set "
-                         "bootstrap=True." % estimator_name)
-            raise ValueError(error_msg)
 
     def fit(self, X, y, **fit_params):
         """Build a LogitBoost classifier from the training data (`X`, `y`).

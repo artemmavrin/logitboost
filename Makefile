@@ -15,6 +15,7 @@ help:
 	@ echo "\tmake html      \t generate documentation using sphinx."
 	@ echo "\tmake test      \t run unit tests using pytest."
 	@ echo "\tmake test2     \t run unit tests using pytest in Python 2."
+	@ echo "\tmake coverage  \t check code coverage."
 	@ echo "\tmake lint      \t check the code using pylint."
 	@ echo "\tmake clean     \t remove auxiliary files."
 

@@ -9,11 +9,14 @@ python:
   - "3.7-dev"
 # command to install dependencies
 install:
+  - pip install --upgrade pip
+  - pip install --upgrade setuptools pytest coverage codecov
   - pip install -r requirements.txt
   - python setup.py install
 # command to run tests
 script:
-  - pytest tests --verbose
+  - coverage run -m pytest
+  - codecov
 # turn off email notifications
 notifications:
   email: false

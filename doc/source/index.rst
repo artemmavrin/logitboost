@@ -14,6 +14,10 @@ LogitBoost
     :target: https://travis-ci.com/artemmavrin/logitboost
     :alt: Travis CI Build Status
 
+.. image:: https://codecov.io/gh/artemmavrin/logitboost/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/artemmavrin/logitboost
+    :alt: Code Coverage
+
 .. image:: https://readthedocs.org/projects/logitboost/badge/?version=latest
     :target: https://logitboost.readthedocs.io/?badge=latest
     :alt: Documentation Status

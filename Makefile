@@ -36,7 +36,7 @@ lint:
 	$(LINT) $(PACKAGE)
 
 clean: trim clean_doc
-	@ $(RM) build dist *.egg-info .eggs .pytest_cache
+	@ $(RM) build dist *.egg-info .eggs .pytest_cache .coverage
 	@ find . -name "__pycache__" -type d | xargs rm -rf
 	@ find . -name ".ipynb_checkpoints" -type d | xargs rm -rf
 	@ find . -name "*.pyc" -type f | xargs rm -f

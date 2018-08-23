@@ -183,3 +183,22 @@ extensions.append("sphinx.ext.linkcode")
 url_fmt = "https://github.com/artemmavrin/logitboost/blob/" \
           "{revision}/{package}/{path}#L{lineno}"
 linkcode_resolve = make_linkcode_resolve("logitboost", url_fmt)
+
+
+# nbsphinx config
+
+# This is processed by Jinja2 and inserted before each notebook
+nbsphinx_prolog = r"""
+{% set docname = env.doc2path(env.docname, base='doc/source') %}
+
+.. only:: html
+
+    .. role:: raw-html(raw)
+        :format: html
+
+    .. nbinfo::
+
+        Open an interactive online version of this notebook:
+        :raw-html:`<a href="https://mybinder.org/v2/gh/artemmavrin/logitboost/master?filepath={{ docname }}">
+        <img alt="Binder badge" src="https://mybinder.org/badge.svg"></a>`
+"""

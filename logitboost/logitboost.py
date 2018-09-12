@@ -275,22 +275,24 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
     def _boost_fit_args(self, X, z, sample_weight, random_state):
         """Get arguments to fit a base estimator during boosting."""
+        # Ignore observations whose weight is below a quantile threshold
+        threshold = np.quantile(sample_weight, self.weight_trim_quantile,
+                                interpolation="lower")
+        mask = (sample_weight >= threshold)
+        X_train = X[mask]
+        z_train = z[mask]
+        sample_weight = sample_weight[mask]
+
         if self.bootstrap:
             # Draw a weighted bootstrap sample
-            n_samples = X.shape[0]
+            n_samples = X_train.shape[0]
             ind = random_state.choice(n_samples, n_samples, replace=True,
                                       p=(sample_weight / sample_weight.sum()))
             X_train = X[ind]
             z_train = z[ind]
             kwargs = dict()
         else:
-            # Perform weight trimming
-            threshold = np.quantile(sample_weight, self.weight_trim_quantile,
-                                    interpolation="lower")
-            mask = (sample_weight >= threshold)
-            X_train = X[mask]
-            z_train = z[mask]
-            kwargs = dict(sample_weight=sample_weight[mask])
+            kwargs = dict(sample_weight=sample_weight)
 
         return X_train, z_train, kwargs
 

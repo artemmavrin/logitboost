@@ -31,6 +31,12 @@ built on top of `scikit-learn <http://scikit-learn.org>`__.
 It supports both binary and multiclass classification; see the
 `examples <https://logitboost.readthedocs.io/examples.html>`__.
 
+This package provides the following class:
+
+.. autosummary::
+
+    ~logitboost.LogitBoost
+
 .. toctree::
     :maxdepth: 1
     :caption: Contents:

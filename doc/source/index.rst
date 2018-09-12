@@ -29,7 +29,7 @@ LogitBoost
 This is a Python implementation of the LogitBoost classification algorithm [1]_
 built on top of `scikit-learn <http://scikit-learn.org>`__.
 It supports both binary and multiclass classification; see the
-`examples <https://logitboost.readthedocs.io/examples.html>`__.
+`examples <examples/index.rst>`__.
 
 This package provides the following class:
 
@@ -43,7 +43,7 @@ This package provides the following class:
 
     installation
     The LogitBoost Class <logitboost>
-    examples
+    examples/index
 
 References
 ----------

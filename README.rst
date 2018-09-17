@@ -31,7 +31,10 @@ built on top of `scikit-learn <http://scikit-learn.org>`__.
 It supports both binary and multiclass classification; see the
 `examples <https://logitboost.readthedocs.io/examples/index.html>`__.
 
-Website: https://logitboost.readthedocs.io
+This package provides a single class, ``LogitBoost``, which can be used
+out-of-the-box like any sciki-learn estimator.
+
+Documentation website: https://logitboost.readthedocs.io
 
 Installation
 ------------

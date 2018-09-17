@@ -31,7 +31,8 @@ built on top of `scikit-learn <http://scikit-learn.org>`__.
 It supports both binary and multiclass classification; see the
 `examples <examples/index.rst>`__.
 
-This package provides the following class:
+This package provides the following class, which can be used out-of-the-box like
+any scikit-learn estimator:
 
 .. autosummary::
 

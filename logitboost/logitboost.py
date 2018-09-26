@@ -116,10 +116,19 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         self.bootstrap = bootstrap
         self.random_state = random_state
 
-    def _validate_estimator(self):
-        """Check the estimator and set the `base_estimator_` attribute."""
+    def _validate_estimator(self, default=None):
+        """Check the base estimator and set the `base_estimator_` attribute.
+
+        Parameters
+        ----------
+        default : object
+            The regressor to use as the base estimator if no `base_estimator`
+            __init__() parameter is given. If not specified, this is a
+            regression decision stump.
+        """
         # The default regressor for LogitBoost is a decision stump
-        default = clone(_BASE_ESTIMATOR_DEFAULT)
+        default = clone(_BASE_ESTIMATOR_DEFAULT) if default is None else default
+
         super(LogitBoost, self)._validate_estimator(default=default)
 
         if not is_regressor(self.base_estimator_):

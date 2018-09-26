@@ -116,25 +116,6 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         self.bootstrap = bootstrap
         self.random_state = random_state
 
-    def _validate_estimator(self, default=None):
-        """Check the base estimator and set the `base_estimator_` attribute.
-
-        Parameters
-        ----------
-        default : object
-            The regressor to use as the base estimator if no `base_estimator`
-            __init__() parameter is given. If not specified, this is a
-            regression decision stump.
-        """
-        # The default regressor for LogitBoost is a decision stump
-        default = clone(_BASE_ESTIMATOR_DEFAULT) if default is None else default
-
-        super(LogitBoost, self)._validate_estimator(default=default)
-
-        if not is_regressor(self.base_estimator_):
-            raise ValueError(
-                "LogitBoost requires the base estimator to be a regressor.")
-
     def fit(self, X, y, **fit_params):
         """Build a LogitBoost classifier from the training data (`X`, `y`).
 
@@ -186,6 +167,225 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             return self._fit_binary(X, y, random_state, fit_params)
 
         return self._fit_multiclass(X, y, random_state, fit_params)
+
+    def decision_function(self, X):
+        """Compute the decision function of `X`.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Returns
+        -------
+        scores : numpy.ndarray of shape (n_samples, k)
+            The decision function of the input samples. The order of outputs is
+            the same of that of the `classes_` attribute. Binary classification
+            is a special cases with `k` = 1, otherwise `k` = `n_classes`. For
+            binary classification, positive values indicate class 1 and negative
+            values indicate class 0.
+        """
+        check_is_fitted(self, "estimators_")
+        if self.n_classes_ == 2:
+            predictions = np.asarray([estimator.predict(X) for estimator
+                                      in self.estimators_], dtype=np.float64)
+            return predictions.sum(axis=0)
+
+        predictions = np.asarray(
+            [[estimator.predict(X) for estimator in estimators]
+             for estimators in self.estimators_], dtype=np.float64)
+        return predictions.sum(axis=0).T
+
+    def predict(self, X):
+        """Predict class labels for `X`.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Returns
+        -------
+        labels : numpy.ndarray of shape (n_samples,)
+            Array of predicted class labels, one for each input.
+        """
+        scores = self.decision_function(X)
+        if self.n_classes_ == 2:
+            indices = (scores > 0).astype(np.int)
+        else:
+            indices = scores.argmax(axis=1)
+        return self.classes_.take(indices, axis=0)
+
+    def predict_proba(self, X):
+        """Predict class probabilities for `X`.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Returns
+        -------
+        prob : numpy.ndarray of shape (n_samples, n_classes)
+            Array of class probabilities of shape (n_samples, n_classes), one
+            probability for each (input, class) pair.
+        """
+        scores = self.decision_function(X)
+        if self.n_classes_ == 2:
+            prob = _binary_prob_from_scores(scores)
+            return np.column_stack((1 - prob, prob))
+
+        return _multiclass_prob_from_scores(scores)
+
+    @property
+    def feature_importances_(self):
+        """Return the feature importances (the higher, the more important the
+        feature).
+
+        Returns
+        -------
+        feature_importances_ : numpy.ndarray of shape (n_features,)
+            The feature importances.
+
+        Raises
+        ------
+        AttributeError
+            Raised if the base estimator doesn't support a
+            `feature_importances_` attribute.
+
+        NotImplementedError
+            Raised if the task is multiclass classification: feature importance
+            is currently only supported for binary classification.
+        """
+        check_is_fitted(self, "estimators_")
+
+        if self.n_classes_ != 2:
+            raise NotImplementedError(
+                "Feature importances is currently only implemented for binary "
+                "classification tasks.")
+
+        try:
+            return np.sum([estimator.feature_importances_ for estimator
+                           in self.estimators_], axis=0) / len(self.estimators_)
+        except AttributeError:
+            raise AttributeError(
+                "Unable to compute feature importances since base_estimator "
+                "does not have a feature_importances_ attribute")
+
+    def staged_decision_function(self, X):
+        """Compute decision function of `X` for each boosting iteration.
+
+        This method allows monitoring (i.e. determine error on testing set)
+        after each boosting iteration.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Yields
+        ------
+        scores : numpy.ndarray of shape (n_samples, k)
+            The decision function of the input samples. The order of outputs is
+            the same of that of the `classes_` attribute. Binary classification
+            is a special cases with `k` = 1, otherwise `k` = `n_classes`. For
+            binary classification, positive values indicate class 1 and negative
+            values indicate class 0.
+        """
+        check_is_fitted(self, "estimators_")
+
+        if self.n_classes_ == 2:
+            predictions = 0.
+            for estimator in self.estimators_:
+                predictions = predictions + estimator.predict(X)
+                yield predictions
+        else:
+            predictions = 0.
+            for estimators_iboost in self.estimators_:
+                predictions_iboost \
+                    = np.asarray([estimator.predict(X) for estimator
+                                  in estimators_iboost], dtype=np.float64).T
+                predictions = predictions + predictions_iboost
+                yield predictions
+
+    def staged_predict(self, X):
+        """Return predictions for `X` at each boosting iteration.
+
+        This generator method yields the ensemble prediction after each
+        iteration of boosting and therefore allows monitoring, such as to
+        determine the prediction on a test set after each boost.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Yields
+        ------
+        labels : numpy.ndarray of shape (n_samples,)
+            Array of predicted class labels, one for each input, at each
+            boosting iteration.
+        """
+        if self.n_classes_ == 2:
+            for scores in self.staged_decision_function(X):
+                yield self.classes_.take((scores > 0).astype(np.int), axis=0)
+        else:
+            for scores in self.staged_decision_function(X):
+                yield self.classes_.take(scores.argmax(axis=1), axis=0)
+
+    def staged_predict_proba(self, X):
+        """Predict class probabilities for `X` at each boosting iteration.
+
+        This generator method yields the ensemble predicted class probabilities
+        after each iteration of boosting and therefore allows monitoring, such
+        as to determine the predicted class probabilities on a test set after
+        each boost.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input data.
+
+        Yields
+        ------
+        prob : numpy.ndarray of shape (n_samples, n_classes)
+            Array of class probabilities of shape (n_samples, n_classes), one
+            probability for each (input, class) pair, at each boosting
+            iteration.
+        """
+        if self.n_classes_ == 2:
+            for scores in self.staged_decision_function(X):
+                prob = _binary_prob_from_scores(scores)
+                yield np.column_stack((1 - prob, prob))
+        else:
+            for scores in self.staged_decision_function(X):
+                yield _multiclass_prob_from_scores(scores)
+
+    def staged_score(self, X, y, sample_weight=None):
+        """Return staged accuracy scores on the given test data and labels.
+
+        This generator method yields the ensemble accuracy score after each
+        iteration of boosting and therefore allows monitoring, such as
+        determine the score on a test set after each boost.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input samples.
+
+        y : array-like of shape (n_samples,)
+            The target values (class labels).
+
+        sample_weight : array-like of shape (n_samples,)
+            Weights for the samples.
+
+        Yields
+        ------
+        accuracy : float
+            Accuracy at each stage of boosting.
+        """
+        for y_pred in self.staged_predict(X):
+            yield accuracy_score(y, y_pred, sample_weight=sample_weight)
 
     def _fit_binary(self, X, y, random_state, fit_params):
         """Fit a binary LogitBoost model (Algorithm 3 in Friedman, Hastie, &
@@ -305,224 +505,24 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
         return X_train, z_train, kwargs
 
-    def staged_score(self, X, y, sample_weight=None):
-        """Return staged accuracy scores on the given test data and labels.
-
-        This generator method yields the ensemble accuracy score after each
-        iteration of boosting and therefore allows monitoring, such as
-        determine the score on a test set after each boost.
+    def _validate_estimator(self, default=None):
+        """Check the base estimator and set the `base_estimator_` attribute.
 
         Parameters
         ----------
-        X : array-like of shape (n_samples, n_features)
-            The input samples.
-
-        y : array-like of shape (n_samples,)
-            The target values (class labels).
-
-        sample_weight : array-like of shape (n_samples,)
-            Weights for the samples.
-
-        Yields
-        ------
-        accuracy : float
-            Accuracy at each stage of boosting.
+        default : object
+            The regressor to use as the base estimator if no `base_estimator`
+            __init__() parameter is given. If not specified, this is a
+            regression decision stump.
         """
-        for y_pred in self.staged_predict(X):
-            yield accuracy_score(y, y_pred, sample_weight=sample_weight)
+        # The default regressor for LogitBoost is a decision stump
+        default = clone(_BASE_ESTIMATOR_DEFAULT) if default is None else default
 
-    def predict(self, X):
-        """Predict class labels for `X`.
+        super(LogitBoost, self)._validate_estimator(default=default)
 
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input data.
-
-        Returns
-        -------
-        labels : numpy.ndarray of shape (n_samples,)
-            Array of predicted class labels, one for each input.
-        """
-        scores = self.decision_function(X)
-        if self.n_classes_ == 2:
-            indices = (scores > 0).astype(np.int)
-        else:
-            indices = scores.argmax(axis=1)
-        return self.classes_.take(indices, axis=0)
-
-    def staged_predict(self, X):
-        """Return predictions for `X` at each boosting iteration.
-
-        This generator method yields the ensemble prediction after each
-        iteration of boosting and therefore allows monitoring, such as to
-        determine the prediction on a test set after each boost.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input data.
-
-        Yields
-        ------
-        labels : numpy.ndarray of shape (n_samples,)
-            Array of predicted class labels, one for each input, at each
-            boosting iteration.
-        """
-        if self.n_classes_ == 2:
-            for scores in self.staged_decision_function(X):
-                yield self.classes_.take((scores > 0).astype(np.int), axis=0)
-        else:
-            for scores in self.staged_decision_function(X):
-                yield self.classes_.take(scores.argmax(axis=1), axis=0)
-
-    def predict_proba(self, X):
-        """Predict class probabilities for `X`.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input data.
-
-        Returns
-        -------
-        prob : numpy.ndarray of shape (n_samples, n_classes)
-            Array of class probabilities of shape (n_samples, n_classes), one
-            probability for each (input, class) pair.
-        """
-        scores = self.decision_function(X)
-        if self.n_classes_ == 2:
-            prob = _binary_prob_from_scores(scores)
-            return np.column_stack((1 - prob, prob))
-
-        return _multiclass_prob_from_scores(scores)
-
-    def staged_predict_proba(self, X):
-        """Predict class probabilities for `X` at each boosting iteration.
-
-        This generator method yields the ensemble predicted class probabilities
-        after each iteration of boosting and therefore allows monitoring, such
-        as to determine the predicted class probabilities on a test set after
-        each boost.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input data.
-
-        Yields
-        ------
-        prob : numpy.ndarray of shape (n_samples, n_classes)
-            Array of class probabilities of shape (n_samples, n_classes), one
-            probability for each (input, class) pair, at each boosting
-            iteration.
-        """
-        if self.n_classes_ == 2:
-            for scores in self.staged_decision_function(X):
-                prob = _binary_prob_from_scores(scores)
-                yield np.column_stack((1 - prob, prob))
-        else:
-            for scores in self.staged_decision_function(X):
-                yield _multiclass_prob_from_scores(scores)
-
-    def decision_function(self, X):
-        """Compute the decision function of `X`.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input data.
-
-        Returns
-        -------
-        scores : numpy.ndarray of shape (n_samples, k)
-            The decision function of the input samples. The order of outputs is
-            the same of that of the `classes_` attribute. Binary classification
-            is a special cases with `k` = 1, otherwise `k` = `n_classes`. For
-            binary classification, positive values indicate class 1 and negative
-            values indicate class 0.
-        """
-        check_is_fitted(self, "estimators_")
-        if self.n_classes_ == 2:
-            predictions = np.asarray([estimator.predict(X) for estimator
-                                      in self.estimators_], dtype=np.float64)
-            return predictions.sum(axis=0)
-
-        predictions = np.asarray(
-            [[estimator.predict(X) for estimator in estimators]
-             for estimators in self.estimators_], dtype=np.float64)
-        return predictions.sum(axis=0).T
-
-    def staged_decision_function(self, X):
-        """Compute decision function of `X` for each boosting iteration.
-
-        This method allows monitoring (i.e. determine error on testing set)
-        after each boosting iteration.
-
-        Parameters
-        ----------
-        X : array-like of shape (n_samples, n_features)
-            The input data.
-
-        Yields
-        ------
-        scores : numpy.ndarray of shape (n_samples, k)
-            The decision function of the input samples. The order of outputs is
-            the same of that of the `classes_` attribute. Binary classification
-            is a special cases with `k` = 1, otherwise `k` = `n_classes`. For
-            binary classification, positive values indicate class 1 and negative
-            values indicate class 0.
-        """
-        check_is_fitted(self, "estimators_")
-
-        if self.n_classes_ == 2:
-            predictions = 0.
-            for estimator in self.estimators_:
-                predictions = predictions + estimator.predict(X)
-                yield predictions
-        else:
-            predictions = 0.
-            for estimators_iboost in self.estimators_:
-                predictions_iboost \
-                    = np.asarray([estimator.predict(X) for estimator
-                                  in estimators_iboost], dtype=np.float64).T
-                predictions = predictions + predictions_iboost
-                yield predictions
-
-    @property
-    def feature_importances_(self):
-        """Return the feature importances (the higher, the more important the
-        feature).
-
-        Returns
-        -------
-        feature_importances_ : numpy.ndarray of shape (n_features,)
-            The feature importances.
-
-        Raises
-        ------
-        AttributeError
-            Raised if the base estimator doesn't support a
-            `feature_importances_` attribute.
-
-        NotImplementedError
-            Raised if the task is multiclass classification: feature importance
-            is currently only supported for binary classification.
-        """
-        check_is_fitted(self, "estimators_")
-
-        if self.n_classes_ != 2:
-            raise NotImplementedError(
-                "Feature importances is currently only implemented for binary "
-                "classification tasks.")
-
-        try:
-            return np.sum([estimator.feature_importances_ for estimator
-                           in self.estimators_], axis=0) / len(self.estimators_)
-        except AttributeError:
-            raise AttributeError(
-                "Unable to compute feature importances since base_estimator "
-                "does not have a feature_importances_ attribute")
+        if not is_regressor(self.base_estimator_):
+            raise ValueError(
+                "LogitBoost requires the base estimator to be a regressor.")
 
 
 def _update_weights_and_response(y, prob, z_max):

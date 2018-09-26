@@ -245,7 +245,10 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         Returns
         -------
         feature_importances_ : numpy.ndarray of shape (n_features,)
-            The feature importances.
+            The feature importances. Each feature's importance is computed as
+            the average feature importance taken over each estimator in the
+            trained ensemble. This requires the base estimator to support a
+            `feature_importances_` attribute.
 
         Raises
         ------

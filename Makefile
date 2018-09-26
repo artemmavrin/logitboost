@@ -1,13 +1,12 @@
 PYTHON := python3
 PYTHON2 := python
-LINT := pylint
 SETUP := setup.py
 SETUPOPTS := -q
 PACKAGE := logitboost
 DOC := doc
 RM := rm -rf
 
-.PHONY: help install html test test2 coverage clean lint trim
+.PHONY: help install html test test2 coverage clean trim
 
 help:
 	@ echo "Usage:"
@@ -16,7 +15,6 @@ help:
 	@ echo "\tmake test      \t run unit tests using pytest."
 	@ echo "\tmake test2     \t run unit tests using pytest in Python 2."
 	@ echo "\tmake coverage  \t check code coverage."
-	@ echo "\tmake lint      \t check the code using pylint."
 	@ echo "\tmake clean     \t remove auxiliary files."
 
 install: clean
@@ -36,9 +34,6 @@ test2:
 coverage: clean
 	coverage run -m pytest
 	coverage report
-
-lint:
-	$(LINT) $(PACKAGE)
 
 clean: trim clean_doc
 	@ $(RM) build dist *.egg-info .eggs .pytest_cache .coverage

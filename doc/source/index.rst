@@ -26,6 +26,10 @@ LogitBoost
     :target: https://logitboost.readthedocs.io/?badge=latest
     :alt: Documentation Status
 
+.. image:: https://img.shields.io/github/license/artemmavrin/logitboost.svg
+    :target: https://github.com/artemmavrin/logitboost/blob/master/LICENSE
+    :alt: GitHub License
+
 This is a Python implementation of the LogitBoost classification algorithm [1]_
 built on top of `scikit-learn <http://scikit-learn.org>`__.
 It supports both binary and multiclass classification; see the

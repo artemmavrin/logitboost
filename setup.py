@@ -25,7 +25,7 @@ setup(
     install_requires=[
         "numpy>=1.15",
         "scipy>=1.1",
-        "scikit-learn>=0.19"
+        "scikit-learn>=0.20"
     ],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],

@@ -391,11 +391,12 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             yield accuracy_score(y, y_pred, sample_weight=sample_weight)
 
     def _fit_binary(self, X, y, random_state, fit_params):
-        """Fit a binary LogitBoost model (Algorithm 3 in Friedman, Hastie, &
-        Tibshirani (2000))."""
+        """Fit a binary LogitBoost model.
+
+        This is Algorithm 3 in Friedman, Hastie, & Tibshirani (2000).
+        """
         # Initialize with uniform class probabilities
-        prob = np.empty(X.shape[0], dtype=np.float64)
-        prob[:] = 0.5
+        prob = np.full(shape=X.shape[0], fill_value=0.5, dtype=np.float64)
 
         # Initialize zero scores for each observation
         scores = np.zeros(X.shape[0], dtype=np.float64)
@@ -408,11 +409,14 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         return self
 
     def _fit_multiclass(self, X, y, random_state, fit_params):
-        """Fit a multiclass LogitBoost model (Algorithm 6 in Friedman, Hastie, &
-        Tibshirani (2000))."""
+        """Fit a multiclass LogitBoost model.
+
+        This is Algorithm 6 in Friedman, Hastie, & Tibshirani (2000).
+        """
         # Initialize with uniform class probabilities
-        prob = np.empty((X.shape[0], self.n_classes_), dtype=np.float64)
-        prob[:] = 1. / self.n_classes_
+        prob = np.full(shape=(X.shape[0], self.n_classes_),
+                       fill_value=(1. / self.n_classes_),
+                       dtype=np.float64)
 
         # Initialize zero scores for each observation
         scores = np.zeros((X.shape[0], self.n_classes_), dtype=np.float64)
@@ -530,22 +534,37 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
 def _update_weights_and_response(y, prob, z_max):
     """Compute the working weights and response for a boosting iteration."""
-    with np.errstate(divide="ignore", over="ignore"):
-        z = np.clip(np.where(y == 1, 1. / prob, -1. / (1. - prob)),
-                    a_min=-z_max, a_max=z_max)
+    # Samples with very certain probabilities (close to 0 or 1) are weighted
+    # less than samples with probabilities closer to 1/2. This is to encourage
+    # the higher-uncertainty samples to contribute more during model training
+    sample_weight = prob * (1. - prob)
 
-    sample_weight = np.maximum(prob * (1. - prob), 2. * _MACHINE_EPSILON)
+    # Don't allow sample weights to be too close to zero for numerical stability
+    # (cf. p. 353 in Friedman, Hastie, & Tibshirani (2000)).
+    sample_weight = np.maximum(sample_weight, 2. * _MACHINE_EPSILON)
+
+    # Compute the regression response z = (y - p) / (p * (1 - p))
+    with np.errstate(divide="ignore", over="ignore"):
+        z = np.where(y, 1. / prob, -1. / (1. - prob))
+
+    # Very negative and very positive values of z are clipped for numerical
+    # stability (cf. p. 352 in Friedman, Hastie, & Tibshirani (2000)).
+    z = np.clip(z, a_min=-z_max, a_max=z_max)
 
     return sample_weight, z
 
 
 def _binary_prob_from_scores(scores):
-    """Convert a LogitBoost score into a probability (binary case)."""
+    """Convert a binary LogitBoost class 1 score into a probability."""
+    # This is formally equivalent to expit(2 * scores), where
+    # expit(x) = 1 / (1 + exp(-x))
     exp_scores = np.exp(scores)
     return exp_scores / (exp_scores + np.exp(-scores))
 
 
 def _multiclass_prob_from_scores(scores):
-    """Convert a LogitBoost score into a probability (multiclass case)."""
-    exp_scores = np.exp(scores)
+    """Convert a multiclass LogitBoost score into a probability vector."""
+    # This is just the softmax function computed using the "max trick" for
+    # numerical stability
+    exp_scores = np.exp(scores - scores.max(axis=1, keepdims=True))
     return exp_scores / exp_scores.sum(axis=1, keepdims=True)

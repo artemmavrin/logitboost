@@ -19,7 +19,7 @@ setup(
     long_description_content_type="text/x-rst",
     url="https://github.com/artemmavrin/logitboost",
     author="Artem Mavrin",
-    author_email="amavrin@ucsd.edu",
+    author_email="artemvmavrin@gmail.com",
     packages=sorted(find_packages(exclude=("*.tests",))),
     include_package_data=True,
     install_requires=[
@@ -27,9 +27,11 @@ setup(
         "scipy>=1.1",
         "scikit-learn>=0.20"
     ],
+    extras_require={"examples": ['jupyter', 'matplotlib', 'seaborn']},
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     zip_safe=False,
+    license="MIT",
     classifiers=[
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 2",
@@ -38,6 +40,7 @@ setup(
         "Programming Language :: Python :: 3.4",
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7"
+        "Programming Language :: Python :: 3.7",
+        "License :: OSI Approved :: MIT License"
     ]
 )

@@ -50,7 +50,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
     max_response : float, optional
         Maximum response value to allow when fitting the base estimators (for
         numerical stability). Values will be clipped to the interval
-        [-`z_max`, `z_max`]. See the bottom of p. 352 in [1]_.
+        [-`max_response`, `max_response`]. See the bottom of p. 352 in [1]_.
 
     learning_rate : float, optional
         The learning rate shrinks the contribution of each classifier by

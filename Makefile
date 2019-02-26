@@ -1,19 +1,17 @@
-PYTHON := python3
-PYTHON2 := python
+PYTHON := python
 SETUP := setup.py
 SETUPOPTS := -q
 PACKAGE := logitboost
 DOC := doc
 RM := rm -rf
 
-.PHONY: help install html test test2 coverage clean trim
+.PHONY: help install html test coverage clean trim distribute
 
 help:
 	@ echo "Usage:"
 	@ echo "\tmake install   \t install the package using setuptools."
 	@ echo "\tmake html      \t generate documentation using sphinx."
 	@ echo "\tmake test      \t run unit tests using pytest."
-	@ echo "\tmake test2     \t run unit tests using pytest in Python 2."
 	@ echo "\tmake coverage  \t check code coverage."
 	@ echo "\tmake clean     \t remove auxiliary files."
 
@@ -27,9 +25,6 @@ html: clean
 
 test:
 	$(PYTHON) $(SETUP) $(SETUPOPTS) test
-
-test2:
-	$(PYTHON2) $(SETUP) $(SETUPOPTS) test
 
 coverage: clean
 	coverage run -m pytest
@@ -49,3 +44,7 @@ clean_doc:
 # Strip any trailing whitespace from source code
 trim:
 	@ find $(PACKAGE) -name "*.py" -exec sed -i 's/[[:space:]]*$$//' {} \;
+
+distribute: clean
+	$(PYTHON) $(SETUP) $(SETUPOPTS) sdist bdist_wheel
+	@ echo "Upload to PyPI using 'twine upload dist/*'"

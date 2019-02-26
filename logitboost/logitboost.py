@@ -5,6 +5,7 @@ from __future__ import division
 import warnings
 
 import numpy as np
+from scipy.special import expit, softmax
 from sklearn.base import ClassifierMixin, MetaEstimatorMixin
 from sklearn.base import clone, is_regressor
 from sklearn.ensemble import BaseEnsemble
@@ -236,10 +237,10 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         """
         scores = self.decision_function(X)
         if self.n_classes_ == 2:
-            prob = _binary_prob_from_scores(scores)
+            prob = expit(scores)
             prob = np.column_stack((1 - prob, prob))
         else:
-            prob = _multiclass_prob_from_scores(scores)
+            prob = softmax(scores, axis=1)
 
         return prob
 
@@ -382,11 +383,11 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         """
         if self.n_classes_ == 2:
             for scores in self.staged_decision_function(X):
-                prob = _binary_prob_from_scores(scores)
+                prob = expit(scores)
                 yield np.column_stack((1 - prob, prob))
         else:
             for scores in self.staged_decision_function(X):
-                yield _multiclass_prob_from_scores(scores)
+                yield softmax(scores, axis=1)
 
     def staged_score(self, X, y, sample_weight=None):
         """Return staged accuracy scores on the given test data and labels.
@@ -442,8 +443,8 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             # doing the last iteration
             if i < self.n_estimators - 1:
                 new_scores = estimator.predict(X)
-                scores += self.learning_rate * 0.5 * new_scores
-                p = _binary_prob_from_scores(scores)
+                scores += self.learning_rate * new_scores
+                p = expit(scores)
 
     def _fit_multiclass(self, X, y, random_state, fit_params):
         """Fit a multiclass LogitBoost model.
@@ -488,7 +489,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
                 new_scores *= (self.n_classes_ - 1) / self.n_classes_
 
                 scores += self.learning_rate * new_scores
-                p = _multiclass_prob_from_scores(scores)
+                p = softmax(scores, axis=1)
 
             self.estimators_.append(new_estimators)
 
@@ -555,19 +556,3 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         z = np.clip(z, a_min=-self.max_response, a_max=self.max_response)
 
         return sample_weight, z
-
-
-def _binary_prob_from_scores(scores):
-    """Convert a binary LogitBoost class 1 score into a probability."""
-    # This is formally equivalent to expit(2 * scores), where
-    # expit(x) = 1 / (1 + exp(-x))
-    exp_scores = np.exp(scores)
-    return exp_scores / (exp_scores + np.exp(-scores))
-
-
-def _multiclass_prob_from_scores(scores):
-    """Convert a multiclass LogitBoost score into a probability vector."""
-    # This is just the softmax function computed using the "max trick" for
-    # numerical stability
-    exp_scores = np.exp(scores - scores.max(axis=1, keepdims=True))
-    return exp_scores / exp_scores.sum(axis=1, keepdims=True)

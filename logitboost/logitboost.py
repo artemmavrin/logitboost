@@ -158,10 +158,9 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         # Check extra keyword arguments for sample_weight: if the user specifies
         # the sample weight manually, then the boosting iterations will never
         # get to update them themselves
-        if "sample_weight" in fit_params and not self.bootstrap:
-            warnings.warn("Ignoring user-specified sample_weight. Use "
-                          "bootstrap=True if you want to specify custom "
-                          "sample_weight for fitting.", RuntimeWarning)
+        if "sample_weight" in fit_params:
+            warnings.warn("Ignoring user-specified sample_weight.",
+                          RuntimeWarning)
             del fit_params["sample_weight"]
 
         # Delegate actual fitting to helper methods

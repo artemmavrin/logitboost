@@ -299,6 +299,38 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
         return np.sum(importances, axis=0) / len(self.estimators_)
 
+    def contributions(self, X, sample_weight=None):
+        """Average absolute contribution of each estimator in the ensemble.
+
+        This can be used to compare how much influence different estimators in
+        the ensemble have on the final predictions made by the model.
+
+        Parameters
+        ----------
+        X : array-like of shape (n_samples, n_features)
+            The input samples to average over.
+
+        sample_weight : array-like of shape (n_samples,)
+            Weights for the samples, for averaging.
+
+        Returns
+        -------
+        contrib : numpy.ndarray of shape (n_estimators,)
+            Average absolute contribution of each estimator in the ensemble.
+        """
+        check_is_fitted(self, "estimators_")
+
+        if self.n_classes_ == 2:
+            predictions = [e.predict(X) for e in self.estimators_]
+            predictions = np.abs(predictions)
+        else:
+            predictions = [[e.predict(X) for e in class_estimators]
+                           for class_estimators in self.estimators_]
+            predictions = np.abs(predictions)
+            predictions = np.mean(predictions, axis=1)
+
+        return np.average(predictions, axis=-1, weights=sample_weight)
+
     def staged_decision_function(self, X):
         """Compute decision function of `X` for each boosting iteration.
 

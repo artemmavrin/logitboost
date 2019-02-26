@@ -84,6 +84,12 @@ def _toy_dataset_test(load_func, test_size=(1. / 3), random_state=0,
         np.testing.assert_almost_equal(staged_score[-1],
                                        logitboost.score(X_test, y_test))
 
+        # contributions() should return one non-negative number for each
+        # estimator in the ensemble
+        contrib = logitboost.contributions(X_train)
+        assert contrib.shape == (logitboost.n_estimators,)
+        assert np.all(contrib >= 0)
+
 
 def test_breast_cancer():
     """Simple binary classification on the breast cancer dataset."""

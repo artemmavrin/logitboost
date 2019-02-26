@@ -49,7 +49,7 @@ GitHub.
 .. code-block :: shell
 
   git clone https://github.com/artemmavrin/logitboost.git
-  cd survive
+  cd logitboost
   make install
 
 Moreover, LogitBoost is on the

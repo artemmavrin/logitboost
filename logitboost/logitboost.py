@@ -31,15 +31,15 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
     Parameters
     ----------
-    base_estimator : object, optional
+    base_estimator : object, optional (default=None)
         The base estimator from which the LogitBoost classifier is built. This
         should be a *regressor*. If no `base_estimator` is specified, a decision
         stump is used.
 
-    n_estimators : int, optional
+    n_estimators : int, optional (default=50)
         The number of estimators per class in the ensemble.
 
-    weight_trim_quantile : float, optional
+    weight_trim_quantile : float, optional (default=0.05)
         Threshold for weight trimming (see Section 9 in [1]_). The distribution
         of the weights tends to become very skewed in later boosting iterations,
         and the observations with low weights contribute little to the base
@@ -48,23 +48,23 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         distribution are removed from the data for fitting the base estimator
         (for that iteration only) to speed up computation.
 
-    max_response : float, optional
+    max_response : float, optional (default=4.0)
         Maximum response value to allow when fitting the base estimators (for
         numerical stability). Values will be clipped to the interval
         [-`max_response`, `max_response`]. See the bottom of p. 352 in [1]_.
 
-    learning_rate : float, optional
+    learning_rate : float, optional (default=1.0)
         The learning rate shrinks the contribution of each classifier by
         `learning_rate` during fitting.
 
-    bootstrap : bool, optional
+    bootstrap : bool, optional (default=False)
         If True, each boosting iteration trains the base estimator using a
         weighted bootstrap sample of the training data. If False, each boosting
         iteration trains the base estimator using the full (weighted) training
         sample. In this case, the base estimator must support sample weighting
         by means of a `sample_weight` parameter in its `fit()` method.
 
-    random_state : int, RandomState instance or None, optional
+    random_state : int, RandomState instance or None, optional (default=None)
         If :class:`int`, `random_state` is the seed used by the random number
         generator. If :class:`~numpy.random.RandomState` instance,
         `random_state` is the random number generator. If None, the random
@@ -107,7 +107,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
     """
 
     def __init__(self, base_estimator=None, n_estimators=50,
-                 weight_trim_quantile=0.05, max_response=4., learning_rate=1.,
+                 weight_trim_quantile=0.05, max_response=4.0, learning_rate=1.0,
                  bootstrap=False, random_state=None):
         super(LogitBoost, self).__init__(base_estimator=base_estimator,
                                          n_estimators=n_estimators)
@@ -128,7 +128,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         y : array-like of shape (n_samples,)
             The target values (class labels).
 
-        fit_params : keyword arguments
+        **fit_params : keyword arguments
             Additional keyword arguments to pass to the base estimator's `fit()`
             method.
 
@@ -310,7 +310,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         X : array-like of shape (n_samples, n_features)
             The input samples to average over.
 
-        sample_weight : array-like of shape (n_samples,)
+        sample_weight : array-like of shape (n_samples,) (default=None)
             Weights for the samples, for averaging.
 
         Returns
@@ -435,7 +435,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         y : array-like of shape (n_samples,)
             The target values (class labels).
 
-        sample_weight : array-like of shape (n_samples,)
+        sample_weight : array-like of shape (n_samples,) (default=None)
             Weights for the samples.
 
         Yields
@@ -552,7 +552,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
 
         Parameters
         ----------
-        default : object
+        default : scikit-learn estimator, optional (default=None)
             The regressor to use as the base estimator if no `base_estimator`
             __init__() parameter is given. If not specified, this is a
             regression decision stump.

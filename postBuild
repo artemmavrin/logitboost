@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# Used by Binder to give matplotlib and seaborn access to notebooks
-python -m pip install "matplotlib>=2.2.3" "seaborn>=0.9.0"

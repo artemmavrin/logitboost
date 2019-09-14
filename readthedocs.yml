@@ -1,8 +1,16 @@
-# .readthedocs.yml
+version: 2
+
+sphinx:
+  builder: html
+  configuration: docs/conf.py
+  fail_on_warning: true
 
 build:
   image: latest
 
 python:
-  version: 3.6
-  setup_py_install: true
+  version: 3.7
+  install:
+    - requirements: docs/rtd-requirements.txt
+    - method: pip
+      path: .

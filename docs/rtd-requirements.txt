@@ -1,7 +1,5 @@
-numpydoc
-sphinx_rtd_theme
+sphinx
 ipython
-sphinx>=1.4
 ipykernel
 nbsphinx
 scikit-learn

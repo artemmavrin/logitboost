@@ -1,50 +1,43 @@
 PYTHON := python
 SETUP := setup.py
 SETUPOPTS := -q
-PACKAGE := logitboost
-DOC := doc
+DOCS := docs
+SPHINXOPTS := '-q -W'
 RM := rm -rf
 
-.PHONY: help install html test coverage clean trim distribute
+.PHONY: help install dev docs test distribute clean py_info
 
 help:
-	@ echo "Usage:"
-	@ echo "\tmake install   \t install the package using setuptools."
-	@ echo "\tmake html      \t generate documentation using sphinx."
-	@ echo "\tmake test      \t run unit tests using pytest."
-	@ echo "\tmake coverage  \t check code coverage."
-	@ echo "\tmake clean     \t remove auxiliary files."
+	@ echo "Usage:\n"
+	@ echo "make install   Install the package using Setuptools."
+	@ echo "make dev       Install the package for development using pip."
+	@ echo "make docs      Generate package documentation using Sphinx"
+	@ echo "make test      Run unit tests and check code coverage."
+	@ echo "make clean     Remove auxiliary files."
 
-install: clean
-	$(PYTHON) -m pip install -r requirements.txt
+docs: clean
+	make -C $(DOCS) html SPHINXOPTS=$(SPHINXOPTS)
+
+install: clean py_info
 	$(PYTHON) $(SETUP) $(SETUPOPTS) install
 
-html: clean
-	@ mkdir -p $(DOC)/source/_static
-	make -C $(DOC) html SPHINXOPTS+='-q -W'
+dev: clean py_info
+	$(PYTHON) -m pip install --upgrade pip setuptools wheel
+	$(PYTHON) -m pip install --upgrade --editable .[dev]
 
-test:
-	$(PYTHON) $(SETUP) $(SETUPOPTS) test
-
-coverage: clean
+test: clean py_info
 	coverage run -m pytest
-	coverage report
+	coverage report --show-missing
 
-clean: trim clean_doc
-	@ $(RM) build dist *.egg-info .eggs .pytest_cache .coverage
-	@ find . -name "__pycache__" -type d | xargs rm -rf
-	@ find . -name ".ipynb_checkpoints" -type d | xargs rm -rf
-	@ find . -name "*.pyc" -type f | xargs rm -f
-	@ find . -name ".DS_Store" -type f | xargs rm -f
-	@ find . -type d -empty -delete
-
-clean_doc:
-	@ $(RM) $(DOC)/build $(DOC)/source/generated
-
-# Strip any trailing whitespace from source code
-trim:
-	@ find $(PACKAGE) -name "*.py" -exec sed -i 's/[[:space:]]*$$//' {} \;
-
-distribute: clean
+distribute: clean py_info
+	@ $(PYTHON) -m pip install -q -U twine
 	$(PYTHON) $(SETUP) $(SETUPOPTS) sdist bdist_wheel
 	@ echo "Upload to PyPI using 'twine upload dist/*'"
+
+clean:
+	@ $(RM) $(DOCS)/build $(DOCS)/api/generated
+	@ $(RM) src/*.egg-info .eggs .pytest_cache .coverage
+	@ $(RM) build dist
+
+py_info:
+	@ echo "Using $$($(PYTHON) --version) at $$(which $(PYTHON))"

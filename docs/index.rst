@@ -14,10 +14,6 @@ LogitBoost
     :target: https://travis-ci.com/artemmavrin/logitboost
     :alt: Travis CI Build Status
 
-.. image:: https://ci.appveyor.com/api/projects/status/cpg1e5t4oymy7c11?svg=true
-    :target: https://ci.appveyor.com/project/artemmavrin/logitboost
-    :alt: AppVeyor Build Status
-
 .. image:: https://codecov.io/gh/artemmavrin/logitboost/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/artemmavrin/logitboost
     :alt: Code Coverage

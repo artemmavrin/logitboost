@@ -1,7 +1,5 @@
 """Implementation of the LogitBoost algorithm."""
 
-from __future__ import division
-
 import warnings
 
 import numpy as np
@@ -158,10 +156,8 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         # Check extra keyword arguments for sample_weight: if the user specifies
         # the sample weight manually, then the boosting iterations will never
         # get to update them themselves
-        if "sample_weight" in fit_params:
-            warnings.warn("Ignoring user-specified sample_weight.",
-                          RuntimeWarning)
-            del fit_params["sample_weight"]
+        if fit_params.pop('sample_weight', None) is not None:
+            warnings.warn('Ignoring sample_weight.', RuntimeWarning)
 
         # Delegate actual fitting to helper methods
         if self.n_classes_ == 2:
@@ -285,17 +281,19 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         check_is_fitted(self, "estimators_")
 
         if self.n_classes_ != 2:
-            raise NotImplementedError("Feature importances is currently only "
-                                      "implemented for binary classification "
-                                      "tasks.")
+            raise NotImplementedError(
+                'Feature importances is currently only implemented for binary '
+                'classification tasks.'
+            )
 
         try:
             importances = [estimator.feature_importances_
                            for estimator in self.estimators_]
         except AttributeError:
             raise AttributeError(
-                "Unable to compute feature importances since base_estimator "
-                "does not have a feature_importances_ attribute")
+                'Unable to compute feature importances since base_estimator '
+                'does not have a feature_importances_ attribute'
+            )
 
         return np.sum(importances, axis=0) / len(self.estimators_)
 
@@ -318,7 +316,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         contrib : numpy.ndarray of shape (n_estimators,)
             Average absolute contribution of each estimator in the ensemble.
         """
-        check_is_fitted(self, "estimators_")
+        check_is_fitted(self, 'estimators_')
 
         if self.n_classes_ == 2:
             predictions = [e.predict(X) for e in self.estimators_]
@@ -351,7 +349,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
             binary classification, positive values indicate class 1 and negative
             values indicate class 0.
         """
-        check_is_fitted(self, "estimators_")
+        check_is_fitted(self, 'estimators_')
 
         if self.n_classes_ == 2:
             scores = 0
@@ -563,8 +561,9 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         super(LogitBoost, self)._validate_estimator(default=default)
 
         if not is_regressor(self.base_estimator_):
-            raise ValueError("LogitBoost requires the base estimator to be a "
-                             "regressor.")
+            raise ValueError(
+                'LogitBoost requires the base estimator to be a regressor.'
+            )
 
     def _weights_and_response(self, y, prob):
         """Update the working weights and response for a boosting iteration."""
@@ -579,7 +578,7 @@ class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
         sample_weight = np.maximum(sample_weight, 2. * _MACHINE_EPSILON)
 
         # Compute the regression response z = (y - p) / (p * (1 - p))
-        with np.errstate(divide="ignore", over="ignore"):
+        with np.errstate(divide='ignore', over='ignore'):
             z = np.where(y, 1. / prob, -1. / (1. - prob))
 
         # Very negative and very positive values of z are clipped for numerical

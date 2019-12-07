@@ -45,6 +45,7 @@ any scikit-learn estimator:
     installation
     The LogitBoost Class <logitboost>
     examples/index
+    Source Code on GitHub <https://github.com/artemmavrin/logitboost>
 
 References
 ----------

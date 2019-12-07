@@ -28,6 +28,7 @@ extensions = [
     'sphinx.ext.graphviz',
     'sphinx.ext.linkcode',
     'nbsphinx',
+    'sphinx_rtd_theme',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -41,7 +42,7 @@ exclude_patterns = ['build']
 pygments_style = 'sphinx'
 
 # Options for HTML output
-html_theme = 'sphinxdoc'
+html_theme = 'sphinx_rtd_theme'
 html_static_path = []
 
 # Options for the intersphinx extension

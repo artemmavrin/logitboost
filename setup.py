@@ -69,6 +69,7 @@ setup(
             'coverage',
             'sphinx',
             'nbsphinx',
+            'sphinx-rtd-theme'
         ],
     },
     setup_requires=['pytest-runner'],

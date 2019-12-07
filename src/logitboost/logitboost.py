@@ -71,23 +71,23 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
     Attributes
     ----------
-    classes_ : numpy.ndarray
+    classes_ : :class:`numpy.ndarray`
         One-dimensional array of unique class labels extracted from the training
         data target vector during fitting.
 
-    estimators_ : list
+    estimators_ : :class:`list`
         All the estimators in the ensemble after fitting. If the task is binary
         classification, this is a list of `n_estimators` fitted base estimators.
         If the task is multiclass classification, this is a list of
         `n_estimators` lists, each containing one base estimator for each class
         label.
 
-    n_classes_ : int
+    n_classes_ : :class:`int`
         Number of classes (length of the `classes_` array). If `n_classes` is 2,
         then the task is binary classification. Otherwise, the task is
         multiclass classification.
 
-    n_features_ : int
+    n_features_ : :class:`int`
         Number of features, inferred during fitting.
 
     See Also
@@ -132,7 +132,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Returns
         -------
-        self : LogitBoost
+        self : :class:`LogitBoost`
             Returns this LogitBoost estimator.
         """
         # Validate __init__() parameters
@@ -177,7 +177,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Returns
         -------
-        scores : numpy.ndarray of shape (n_samples, k)
+        scores : :class:`numpy.ndarray` of shape (n_samples, k)
             The decision function of the input samples. The order of outputs is
             the same of that of the `classes_` attribute. Binary classification
             is a special cases with `k` = 1, otherwise `k` = `n_classes`. For
@@ -205,7 +205,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Returns
         -------
-        labels : numpy.ndarray of shape (n_samples,)
+        labels : :class:`numpy.ndarray` of shape (n_samples,)
             Array of predicted class labels, one for each input.
         """
         scores = self.decision_function(X)
@@ -226,7 +226,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Returns
         -------
-        prob : numpy.ndarray of shape (n_samples, n_classes)
+        prob : :class:`numpy.ndarray` of shape (n_samples, n_classes)
             Array of class probabilities of shape (n_samples, n_classes), one
             probability for each (input, class) pair.
         """
@@ -249,7 +249,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Returns
         -------
-        log_prob : numpy.ndarray of shape (n_samples, n_classes)
+        log_prob : :class:`numpy.ndarray` of shape (n_samples, n_classes)
             Array of class log-probabilities of shape (n_samples, n_classes),
             one log-probability for each (input, class) pair.
         """
@@ -262,7 +262,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Returns
         -------
-        feature_importances_ : numpy.ndarray of shape (n_features,)
+        feature_importances_ : :class:`numpy.ndarray` of shape (n_features,)
             The feature importances. Each feature's importance is computed as
             the average feature importance taken over each estimator in the
             trained ensemble. This requires the base estimator to support a
@@ -313,7 +313,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Returns
         -------
-        contrib : numpy.ndarray of shape (n_estimators,)
+        contrib : :class:`numpy.ndarray` of shape (n_estimators,)
             Average absolute contribution of each estimator in the ensemble.
         """
         check_is_fitted(self, 'estimators_')
@@ -342,7 +342,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Yields
         ------
-        scores : numpy.ndarray of shape (n_samples, k)
+        scores : :class:`numpy.ndarray` of shape (n_samples, k)
             The decision function of the input samples. The order of outputs is
             the same of that of the `classes_` attribute. Binary classification
             is a special cases with `k` = 1, otherwise `k` = `n_classes`. For
@@ -377,7 +377,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Yields
         ------
-        labels : numpy.ndarray of shape (n_samples,)
+        labels : :class:`numpy.ndarray` of shape (n_samples,)
             Array of predicted class labels, one for each input, at each
             boosting iteration.
         """
@@ -405,7 +405,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Yields
         ------
-        prob : numpy.ndarray of shape (n_samples, n_classes)
+        prob : :class:`numpy.ndarray` of shape (n_samples, n_classes)
             Array of class probabilities of shape (n_samples, n_classes), one
             probability for each (input, class) pair, at each boosting
             iteration.
@@ -438,7 +438,7 @@ class LogitBoost(ClassifierMixin, BaseEnsemble):
 
         Yields
         ------
-        accuracy : float
+        accuracy : :class:`float`
             Accuracy at each stage of boosting.
         """
         for y_pred in self.staged_predict(X):

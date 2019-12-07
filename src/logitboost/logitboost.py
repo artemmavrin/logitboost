@@ -4,7 +4,7 @@ import warnings
 
 import numpy as np
 from scipy.special import expit, softmax
-from sklearn.base import ClassifierMixin, MetaEstimatorMixin
+from sklearn.base import ClassifierMixin
 from sklearn.base import clone, is_regressor
 from sklearn.ensemble import BaseEnsemble
 from sklearn.metrics import accuracy_score
@@ -21,7 +21,7 @@ _MACHINE_EPSILON = np.finfo(np.float64).eps
 _BASE_ESTIMATOR_DEFAULT = DecisionTreeRegressor(max_depth=1)
 
 
-class LogitBoost(BaseEnsemble, ClassifierMixin, MetaEstimatorMixin):
+class LogitBoost(ClassifierMixin, BaseEnsemble):
     """A LogitBoost classifier.
 
     A LogitBoost [1]_ classifier is a meta-estimator that fits an additive model

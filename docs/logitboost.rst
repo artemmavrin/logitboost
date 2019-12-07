@@ -5,4 +5,5 @@
 .. currentmodule:: logitboost
 
 .. autoclass:: LogitBoost
+    :show-inheritance:
     :members:

@@ -10,6 +10,10 @@ LogitBoost
     :target: https://pypi.org/project/logitboost/
     :alt: PyPI Package Version
 
+.. image:: https://img.shields.io/github/last-commit/artemmavrin/logitboost/master
+    :target: https://github.com/artemmavrin/logitboost
+    :alt: Last Commit
+
 .. image:: https://travis-ci.com/artemmavrin/logitboost.svg?branch=master
     :target: https://travis-ci.com/artemmavrin/logitboost
     :alt: Travis CI Build Status

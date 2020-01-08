@@ -2,7 +2,7 @@
 Installation
 ============
 
-The ``logitboost`` package can be installed using the
+The :mod:`logitboost` package can be installed using the
 `pip <https://pip.pypa.io/en/stable/>`__ utility. For the latest version,
 install directly from the package's
 `GitHub page <https://github.com/artemmavrin/logitboost>`__:

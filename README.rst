@@ -73,7 +73,7 @@ This will additionally install the requirements needed to run tests, check code
 coverage, and generate documentation.
 
 This project was developed in Python 3.7, and it is tested to also work with
-Python 3.6.
+Python 3.6 and 3.8.
 
 References
 ----------

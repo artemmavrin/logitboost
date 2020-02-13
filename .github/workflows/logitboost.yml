@@ -1,4 +1,4 @@
-name: LobitBoost Python package
+name: LogitBoost Python package
 
 on: [push]
 
@@ -7,7 +7,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-latest, ubuntu-latest, windows-latest]
+        os: [macos-latest, ubuntu-latest]
         python-version: [3.6, 3.7, 3.8]
 
     steps:

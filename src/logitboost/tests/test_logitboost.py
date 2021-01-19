@@ -15,7 +15,7 @@ from logitboost import LogitBoost
 
 def test_sklearn_api():
     """Make sure LogitBoost is minimally compliant with scikit-learn's API."""
-    check_estimator(LogitBoost)
+    check_estimator(LogitBoost())
 
 
 def _toy_dataset_test(load_func, test_size=(1. / 3), random_state=0,

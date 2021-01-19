@@ -14,9 +14,9 @@ LogitBoost
     :target: https://github.com/artemmavrin/logitboost
     :alt: Last Commit
 
-.. image:: https://travis-ci.com/artemmavrin/logitboost.svg?branch=master
-    :target: https://travis-ci.com/artemmavrin/logitboost
-    :alt: Travis CI Build Status
+.. image:: https://github.com/artemmavrin/logitboost/workflows/LogitBoost%20Python%20package/badge.svg
+    :target: https://github.com/artemmavrin/logitboost/actions?query=workflow%3A%22LogitBoost+Python+package%22
+    :alt: Build Status
 
 .. image:: https://codecov.io/gh/artemmavrin/logitboost/branch/master/graph/badge.svg
     :target: https://codecov.io/gh/artemmavrin/logitboost

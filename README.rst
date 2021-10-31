@@ -1,5 +1,5 @@
 ==========
-LogitBoost
+LogitBoost (No Longer Maintained)
 ==========
 
 .. image:: https://img.shields.io/pypi/pyversions/logitboost.svg
